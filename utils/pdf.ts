@@ -6,7 +6,7 @@ export const downloadInvoicePdf = (elementId: string, filename: string) => {
     if (!element) return;
 
     const opt = {
-        margin: [0.3, 0.3, 0.3, 0.3],
+        margin: 0.3,
         filename: filename.endsWith('.pdf') ? filename : `${filename}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },

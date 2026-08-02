@@ -45,7 +45,7 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
         ...pendingInvoices.map(inv => ({
             id: `inv-${inv.id}`,
             type: 'invoice' as const,
-            title: `Invoice Pending (${inv.number})`,
+            title: `Invoice Pending`,
             description: `${getClientName(inv.clientId)} • ${formatCurrency(invoiceTotal(inv))}`,
             icon: 'pending_actions',
             iconBg: 'bg-amber-500/10 text-amber-600',
@@ -54,7 +54,7 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
         ...paidInvoices.map(inv => ({
             id: `paid-${inv.id}`,
             type: 'payment' as const,
-            title: `Payment Received (${inv.number})`,
+            title: `Payment Received`,
             description: `${getClientName(inv.clientId)} paid ${formatCurrency(invoiceTotal(inv))}`,
             icon: 'check_circle',
             iconBg: 'bg-emerald-500/10 text-emerald-600',

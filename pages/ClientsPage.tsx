@@ -34,6 +34,7 @@ const ClientsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [selectedDetailClient, setSelectedDetailClient] = useState<Client | null>(null);
+    const [showContactInfo, setShowContactInfo] = useState(false);
     const [activeAttendanceSession, setActiveAttendanceSession] = useState<Session | null>(null);
 
     // Form state
@@ -249,7 +250,10 @@ const ClientsPage: React.FC = () => {
                             return (
                                 <div
                                     key={client.id}
-                                    onClick={() => setSelectedDetailClient(client)}
+                                    onClick={() => {
+                                        setSelectedDetailClient(client);
+                                        setShowContactInfo(false);
+                                    }}
                                     className="group rounded-2xl bg-white border-2 border-ink p-4 space-y-3 shadow-card transition-all hover:border-primary cursor-pointer active:scale-[0.995]"
                                 >
                                     <div className="flex items-center justify-between gap-3">
@@ -350,45 +354,68 @@ const ClientsPage: React.FC = () => {
                         </div>
 
                         {/* Contact Information */}
-                        <div className="space-y-3">
-                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Contact Information</h4>
-                            <div className="bg-background rounded-2xl p-3 border border-border-light space-y-2 text-xs">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-text-muted flex items-center gap-1.5">
-                                        <Icon name="mail" className="text-[16px]" />
-                                        Email:
-                                    </span>
-                                    {selectedDetailClient.email ? (
-                                        <a href={`mailto:${selectedDetailClient.email}`} className="font-bold text-primary hover:underline truncate max-w-[180px]">
-                                            {selectedDetailClient.email}
-                                        </a>
-                                    ) : (
-                                        <span className="text-text-muted italic">Not provided</span>
-                                    )}
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-text-muted flex items-center gap-1.5">
-                                        <Icon name="call" className="text-[16px]" />
-                                        Phone:
-                                    </span>
-                                    {selectedDetailClient.phone ? (
-                                        <a href={`tel:${selectedDetailClient.phone}`} className="font-mono font-bold text-ink hover:underline">
-                                            {selectedDetailClient.phone}
-                                        </a>
-                                    ) : (
-                                        <span className="text-text-muted italic">Not provided</span>
-                                    )}
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-text-muted flex items-center gap-1.5">
-                                        <Icon name="event" className="text-[16px]" />
-                                        Client Since:
-                                    </span>
-                                    <span className="font-bold text-ink">
-                                        {formatClientSince(selectedDetailClient.createdAt)}
-                                    </span>
-                                </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Contact Information</h4>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowContactInfo(!showContactInfo)}
+                                    className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover px-2.5 py-1 rounded-full bg-primary-soft hover:bg-primary-soft/80 border border-primary/20 transition-all cursor-pointer active:scale-95"
+                                >
+                                    <Icon name={showContactInfo ? 'visibility_off' : 'visibility'} className="text-[15px]" />
+                                    <span>{showContactInfo ? 'Hide Details' : 'Show Details'}</span>
+                                </button>
                             </div>
+
+                            {showContactInfo ? (
+                                <div className="bg-background rounded-2xl p-3 border border-border-light space-y-2 text-xs animate-fadeIn">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-text-muted flex items-center gap-1.5">
+                                            <Icon name="mail" className="text-[16px]" />
+                                            Email:
+                                        </span>
+                                        {selectedDetailClient.email ? (
+                                            <a href={`mailto:${selectedDetailClient.email}`} className="font-bold text-primary hover:underline truncate max-w-[180px]">
+                                                {selectedDetailClient.email}
+                                            </a>
+                                        ) : (
+                                            <span className="text-text-muted italic">Not provided</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-text-muted flex items-center gap-1.5">
+                                            <Icon name="call" className="text-[16px]" />
+                                            Phone:
+                                        </span>
+                                        {selectedDetailClient.phone ? (
+                                            <a href={`tel:${selectedDetailClient.phone}`} className="font-mono font-bold text-ink hover:underline">
+                                                {selectedDetailClient.phone}
+                                            </a>
+                                        ) : (
+                                            <span className="text-text-muted italic">Not provided</span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-text-muted flex items-center gap-1.5">
+                                            <Icon name="event" className="text-[16px]" />
+                                            Client Since:
+                                        </span>
+                                        <span className="font-bold text-ink">
+                                            {formatClientSince(selectedDetailClient.createdAt)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div 
+                                    onClick={() => setShowContactInfo(true)}
+                                    className="bg-background/60 hover:bg-background rounded-2xl p-3 border border-dashed border-border-light text-center cursor-pointer transition-all group"
+                                >
+                                    <p className="text-xs text-text-muted font-medium group-hover:text-ink transition-colors flex items-center justify-center gap-1.5">
+                                        <Icon name="lock" className="text-sm text-text-muted" />
+                                        Personal details hidden • Tap to view
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Financial Summary */}

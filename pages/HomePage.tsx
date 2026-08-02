@@ -19,7 +19,9 @@ const HomePage: React.FC = () => {
     const [trendPeriod, setTrendPeriod] = useState<'This Month' | 'Last Month' | 'Yearly'>('This Month');
     const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
-    const todaySessions = getSessionsForDate(todayISO());
+    const allTodaySessions = getSessionsForDate(todayISO());
+    // Filter active today sessions: default is scheduled; if marked as attended, it drops off
+    const activeTodaySessions = allTodaySessions.filter(s => s.status === 'scheduled');
     const clientNameFor = (id: string) => clients.find(c => c.id === id)?.name || 'Unknown';
 
     const invoiceTotal = (inv: typeof invoices[number]) => {
@@ -38,7 +40,7 @@ const HomePage: React.FC = () => {
     const coachTitle = settings.profile.title || 'Strength & Conditioning Coach';
 
     // Notifications Count
-    const activeNotifCount = pendingInvoices.length + todaySessions.length;
+    const activeNotifCount = pendingInvoices.length + activeTodaySessions.length;
 
     // Income Trend Dynamic Calculations
     const getTrendData = () => {
@@ -288,12 +290,16 @@ const HomePage: React.FC = () => {
                         <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">Today's Schedule</h3>
                         <a className="text-xs font-bold text-primary hover:text-primary-hover transition-colors uppercase tracking-wide" href="#/calendar">View All</a>
                     </div>
-                    {todaySessions.length === 0 ? (
+                    {activeTodaySessions.length === 0 ? (
                         <p className="text-center text-text-muted text-sm py-6 bg-white rounded-2xl border-2 border-ink">Nothing booked for today.</p>
                     ) : (
                         <div className="space-y-3">
-                            {todaySessions.map((session) => (
-                                <div key={session.id} className="flex flex-col gap-2 rounded-2xl p-4 border-2 border-ink bg-white">
+                            {activeTodaySessions.map((session) => (
+                                <div 
+                                    key={session.id} 
+                                    onClick={() => setActiveAttendanceSession(session)}
+                                    className="flex flex-col gap-2 rounded-2xl p-4 border-2 border-ink bg-white cursor-pointer hover:border-primary transition-colors active:scale-[0.995]"
+                                >
                                     <div className="flex items-center gap-3">
                                         <div className="flex flex-col items-center justify-center rounded-lg px-2.5 py-1.5 w-16 bg-ink text-white shrink-0">
                                             <span className="font-mono text-xs font-bold text-center">{session.time}</span>
@@ -310,7 +316,6 @@ const HomePage: React.FC = () => {
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attendance:</span>
                                         <AttendanceBadge
                                             status={session.status}
-                                            onClick={() => setActiveAttendanceSession(session)}
                                         />
                                     </div>
                                 </div>
@@ -369,7 +374,7 @@ const HomePage: React.FC = () => {
                 isOpen={showNotifications}
                 onClose={() => setShowNotifications(false)}
                 invoices={invoices}
-                todaySessions={todaySessions}
+                todaySessions={activeTodaySessions}
                 clients={clients}
             />
         </>

@@ -51,6 +51,8 @@ interface DataContextType {
     deleteInvoice: (id: string) => void;
     addExpense: (expense: Omit<ExpenseItem, 'id'>) => void;
     addGoal: (goal: Omit<ActiveGoal, 'id'>) => void;
+    updateGoal: (id: string, updates: Partial<ActiveGoal>) => void;
+    deleteGoal: (id: string) => void;
     addSession: (session: Omit<Session, 'id'>) => void;
     updateSessionStatus: (id: string, status: SessionAttendanceStatus, notes?: string) => void;
     updateSession: (id: string, updates: Partial<Session>) => void;
@@ -192,25 +194,46 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             createdAt: new Date().toISOString(),
         };
         setClients(prev => [...prev, client]);
+        fetch('/api/clients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(client),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
         return client;
-        };
+    };
 
     const updateClient = (id: string, updates: Partial<Client>) => {
         setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+        fetch(`/api/clients/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const deleteClient = (id: string) => {
         setClients(prev => prev.filter(c => c.id !== id));
+        fetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const addInvoice = (invoice: Omit<Invoice, 'id' | 'status'>): Invoice => {
         const newInv: Invoice = { ...invoice, id: `inv${Date.now()}`, status: 'sent' };
         setInvoices(prev => [newInv, ...prev]);
+        fetch('/api/invoices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newInv),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
         return newInv;
     };
 
     const markInvoicePaid = (id: string) => {
         setInvoices(prev => prev.map(inv => (inv.id === id ? { ...inv, status: 'paid' } : inv)));
+        fetch(`/api/invoices/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'paid' }),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const sendInvoiceReminder = (id: string) => {
@@ -236,7 +259,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addGoal: DataContextType['addGoal'] = (goal) => {
-        setGoals(prev => [...prev, { ...goal, id: `g${Date.now()}` }]);
+        const newGoal = { ...goal, id: `g${Date.now()}` };
+        setGoals(prev => [...prev, newGoal]);
+        fetch('/api/goals', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newGoal),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
+    };
+
+    const updateGoal = (id: string, updates: Partial<ActiveGoal>) => {
+        setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
+        fetch(`/api/goals/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
+    };
+
+    const deleteGoal = (id: string) => {
+        setGoals(prev => prev.filter(g => g.id !== id));
+        fetch(`/api/goals/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const addSession: DataContextType['addSession'] = (session) => {
@@ -279,6 +322,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 deleteInvoice,
                 addExpense,
                 addGoal,
+                updateGoal,
+                deleteGoal,
                 addSession,
                 updateSessionStatus,
                 updateSession,

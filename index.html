@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Righteous&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
     tailwind.config = {
@@ -16,26 +16,26 @@
             extend: {
                 colors: {
                     // GymPay Bold/Energetic Theme
-                    "primary": "#FF4713",
-                    "primary-hover": "#E63C0C",
-                    "primary-soft": "#FFEAE0",
-                    "volt": "#C8FF3D",
-                    "volt-soft": "#F3FFDA",
-                    "signal": "#17C974",
-                    "signal-soft": "#E4FBEF",
-                    "danger": "#FF3B5C",
-                    "danger-soft": "#FFE7EA",
-                    "ink": "#14161F",
-                    "background": "#F1F3F0",
-                    "surface": "#ffffff",
-                    "text-main": "#14161F",
-                    "text-muted": "#6B7280",
-                    "border-light": "#E4E7E2",
+                    "primary": "var(--theme-primary, #FF4713)",
+                    "primary-hover": "var(--theme-primary-hover, #E63C0C)",
+                    "primary-soft": "var(--theme-primary-soft, #FFEAE0)",
+                    "volt": "var(--theme-volt, #C8FF3D)",
+                    "volt-soft": "var(--theme-volt-soft, #F3FFDA)",
+                    "signal": "var(--theme-signal, #17C974)",
+                    "signal-soft": "var(--theme-signal-soft, #E4FBEF)",
+                    "danger": "var(--theme-danger, #FF3B5C)",
+                    "danger-soft": "var(--theme-danger-soft, #FFE7EA)",
+                    "ink": "var(--theme-ink, #14161F)",
+                    "background": "var(--theme-background, #F1F3F0)",
+                    "surface": "var(--theme-surface, #ffffff)",
+                    "text-main": "var(--theme-text-main, #14161F)",
+                    "text-muted": "var(--theme-text-muted, #6B7280)",
+                    "border-light": "var(--theme-border-light, #E4E7E2)",
                 },
                 fontFamily: {
-                    "display": ["Anton", "sans-serif"],
-                    "inter": ["Inter", "sans-serif"],
-                    "mono": ["JetBrains Mono", "monospace"],
+                    "display": ["var(--theme-font-display, Anton)", "sans-serif"],
+                    "inter": ["var(--theme-font-inter, Inter)", "sans-serif"],
+                    "mono": ["var(--theme-font-mono, 'JetBrains Mono')", "monospace"],
                 },
                 boxShadow: {
                     'soft': '0 2px 15px -3px rgba(20, 22, 31, 0.06), 0 4px 6px -4px rgba(20, 22, 31, 0.05)',
@@ -48,7 +48,7 @@
     </script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: var(--theme-font-inter, 'Inter'), sans-serif;
         }
         .material-symbols-outlined {
           font-variation-settings:

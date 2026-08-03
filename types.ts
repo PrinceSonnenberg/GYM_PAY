@@ -126,6 +126,9 @@ export interface UserSettings {
         autoReminders?: boolean;
         reminderDays?: number;
     };
+    uiTheme?: { 
+        preset: "energetic" | "ocean" | "sunset"; 
+    };
     invoiceDefaults: {
         defaultDueDays: number;
         defaultTaxRate: number; // e.g. 0.05

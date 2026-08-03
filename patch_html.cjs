@@ -1,0 +1,22 @@
+const fs = require('fs');
+let code = fs.readFileSync('index.html', 'utf-8');
+code = code.replace(/"primary": "#FF4713",/g, '"primary": "var(--theme-primary, #FF4713)",');
+code = code.replace(/"primary-hover": "#E63C0C",/g, '"primary-hover": "var(--theme-primary-hover, #E63C0C)",');
+code = code.replace(/"primary-soft": "#FFEAE0",/g, '"primary-soft": "var(--theme-primary-soft, #FFEAE0)",');
+code = code.replace(/"volt": "#C8FF3D",/g, '"volt": "var(--theme-volt, #C8FF3D)",');
+code = code.replace(/"volt-soft": "#F3FFDA",/g, '"volt-soft": "var(--theme-volt-soft, #F3FFDA)",');
+code = code.replace(/"signal": "#17C974",/g, '"signal": "var(--theme-signal, #17C974)",');
+code = code.replace(/"signal-soft": "#E4FBEF",/g, '"signal-soft": "var(--theme-signal-soft, #E4FBEF)",');
+code = code.replace(/"danger": "#FF3B5C",/g, '"danger": "var(--theme-danger, #FF3B5C)",');
+code = code.replace(/"danger-soft": "#FFE7EA",/g, '"danger-soft": "var(--theme-danger-soft, #FFE7EA)",');
+code = code.replace(/"ink": "#14161F",/g, '"ink": "var(--theme-ink, #14161F)",');
+code = code.replace(/"background": "#F1F3F0",/g, '"background": "var(--theme-background, #F1F3F0)",');
+code = code.replace(/"surface": "#ffffff",/g, '"surface": "var(--theme-surface, #ffffff)",');
+code = code.replace(/"text-main": "#14161F",/g, '"text-main": "var(--theme-text-main, #14161F)",');
+code = code.replace(/"text-muted": "#6B7280",/g, '"text-muted": "var(--theme-text-muted, #6B7280)",');
+code = code.replace(/"border-light": "#E4E7E2",/g, '"border-light": "var(--theme-border-light, #E4E7E2)",');
+
+code = code.replace(/"display": \["Anton", "sans-serif"\],/g, '"display": ["var(--theme-font-display, Anton)", "sans-serif"],');
+code = code.replace(/"inter": \["Inter", "sans-serif"\],/g, '"inter": ["var(--theme-font-inter, Inter)", "sans-serif"],');
+code = code.replace(/"mono": \["JetBrains Mono", "monospace"\],/g, '"mono": ["var(--theme-font-mono, \'JetBrains Mono\')", "monospace"],');
+fs.writeFileSync('index.html', code);

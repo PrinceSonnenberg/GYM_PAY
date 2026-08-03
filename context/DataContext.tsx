@@ -27,6 +27,9 @@ const defaultUserSettings: UserSettings = {
         autoReminders: true,
         reminderDays: 3,
     },
+    uiTheme: { 
+        preset: "energetic", 
+    },
     invoiceDefaults: {
         defaultDueDays: 14,
         defaultTaxRate: 0.05,
@@ -43,6 +46,7 @@ interface DataContextType {
     sessions: Session[];
     services: ServicePreset[];
     settings: UserSettings;
+    updateUiTheme: (theme: Partial<UserSettings["uiTheme"]>) => void;
     addClient: (name: string, email?: string, phone?: string, status?: 'On Track' | 'At Risk' | 'New') => Client;
     updateClient: (id: string, updates: Partial<Client>) => void;
     deleteClient: (id: string) => void;
@@ -151,6 +155,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSettings(prev => ({
             ...prev,
             notifications: { ...prev.notifications, ...notifUpdates },
+        }));
+    };
+
+    const updateUiTheme = (themeUpdates: Partial<UserSettings['uiTheme']>) => {
+        setSettings(prev => ({
+            ...prev,
+            uiTheme: { ...(prev.uiTheme || { preset: "energetic" }), ...themeUpdates },
         }));
     };
 
@@ -339,6 +350,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 updateProfile,
                 updatePayout,
                 updateNotifications,
+                updateUiTheme,
                 updateInvoiceDefaults,
                 resetAllData,
             }}

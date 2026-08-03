@@ -868,6 +868,7 @@ const SettingsPage: React.FC = () => {
                                                 addServicePreset({
                                                     title: newServiceTitle.trim(),
                                                     category: 'Custom Service',
+                                                    details: 'Custom service added by user',
                                                     defaultRate: rate,
                                                     defaultSessions: newServiceSessions,
                                                     icon: 'fitness_center',

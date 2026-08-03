@@ -1,3 +1,4 @@
+import { apiFetch } from "../utils/api";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Client, Invoice, InvoiceItem, ExpenseItem, ActiveGoal, Session, SessionAttendanceStatus, UserSettings, ServicePreset } from '../types';
@@ -194,7 +195,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             createdAt: new Date().toISOString(),
         };
         setClients(prev => [...prev, client]);
-        fetch('/api/clients', {
+        apiFetch('/api/clients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(client),
@@ -204,7 +205,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateClient = (id: string, updates: Partial<Client>) => {
         setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-        fetch(`/api/clients/${id}`, {
+        apiFetch(`/api/clients/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
@@ -213,13 +214,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const deleteClient = (id: string) => {
         setClients(prev => prev.filter(c => c.id !== id));
-        fetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
+        apiFetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const addInvoice = (invoice: Omit<Invoice, 'id' | 'status'>): Invoice => {
         const newInv: Invoice = { ...invoice, id: `inv${Date.now()}`, status: 'sent' };
         setInvoices(prev => [newInv, ...prev]);
-        fetch('/api/invoices', {
+        apiFetch('/api/invoices', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newInv),
@@ -229,7 +230,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const markInvoicePaid = (id: string) => {
         setInvoices(prev => prev.map(inv => (inv.id === id ? { ...inv, status: 'paid' } : inv)));
-        fetch(`/api/invoices/${id}`, {
+        apiFetch(`/api/invoices/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'paid' }),
@@ -261,7 +262,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const addGoal: DataContextType['addGoal'] = (goal) => {
         const newGoal = { ...goal, id: `g${Date.now()}` };
         setGoals(prev => [...prev, newGoal]);
-        fetch('/api/goals', {
+        apiFetch('/api/goals', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newGoal),
@@ -270,7 +271,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateGoal = (id: string, updates: Partial<ActiveGoal>) => {
         setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
-        fetch(`/api/goals/${id}`, {
+        apiFetch(`/api/goals/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates),
@@ -279,7 +280,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const deleteGoal = (id: string) => {
         setGoals(prev => prev.filter(g => g.id !== id));
-        fetch(`/api/goals/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
+        apiFetch(`/api/goals/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const addSession: DataContextType['addSession'] = (session) => {

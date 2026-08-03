@@ -213,7 +213,7 @@ const NewInvoicePage: React.FC = () => {
                             </p>
                         </div>
 
-                        <div className="p-5 overflow-y-auto space-y-4">
+                        <div className="p-5 overflow-visible space-y-4">
                             <div className="bg-background rounded-2xl p-4 border border-border-light space-y-2 text-xs">
                                 <div className="flex justify-between">
                                     <span className="text-text-muted uppercase font-bold text-[10px]">Billed To</span>
@@ -288,7 +288,7 @@ const NewInvoicePage: React.FC = () => {
 
                             <button
                                 onClick={async () => {
-                                    const shareUrl = `${window.location.origin}/invoices?id=${createdInvoice.id}`;
+                                    const shareUrl = `${window.location.origin}${window.location.pathname}#/invoices?id=${createdInvoice.id}`;
                                     if (navigator.share) {
                                         try {
                                             await navigator.share({
@@ -326,7 +326,7 @@ const NewInvoicePage: React.FC = () => {
 
             {/* PDF Printable Invoice Modal */}
             {showPdfView && createdInvoice && (
-                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 overflow-visible">
                     <div className="w-full max-w-xl bg-white rounded-3xl border-2 border-ink shadow-2xl overflow-hidden my-auto flex flex-col max-h-[95vh]">
                         {/* Header */}
                         <div className="bg-ink p-4 text-white flex justify-between items-center border-b-2 border-ink shrink-0">
@@ -362,7 +362,7 @@ const NewInvoicePage: React.FC = () => {
                         </div>
 
                         {/* Printable Body */}
-                        <div className="p-8 overflow-y-auto text-ink font-inter bg-white" id="printable-invoice">
+                        <div className="p-8 overflow-visible text-ink font-inter bg-white" id="printable-invoice">
                             <div className="flex justify-between items-start border-b-2 border-ink pb-6 mb-6">
                                 <div className="mb-4">
                                     {settings.profile.logoUrl ? (
@@ -536,7 +536,7 @@ const NewInvoicePage: React.FC = () => {
                 </div>
             )}
 
-            <main className="flex-1 overflow-y-auto pb-24">
+            <main className="flex-1 overflow-visible pb-24">
                 {errorMessage && (
                     <div className="mx-5 mt-4 p-3 rounded-xl bg-danger-soft border-2 border-danger text-danger text-xs font-bold flex items-center justify-between">
                         <div className="flex items-center gap-2">

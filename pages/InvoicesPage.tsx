@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '../components/Icon';
 import BottomNav from '../components/BottomNav';
 import { useData } from '../context/DataContext';
@@ -9,7 +9,15 @@ import { Invoice } from '../types';
 
 const InvoicesPage: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { invoices, clients, markInvoicePaid, deleteInvoice, sendInvoiceReminder, settings } = useData();
+    const queryId = new URLSearchParams(location.search).get('id');
+    useEffect(() => {
+        if (queryId && invoices.length > 0) {
+            const target = invoices.find(inv => inv.id === queryId);
+            if (target) setSelectedInvoice(target);
+        }
+    }, [queryId, invoices]);
     const [filter, setFilter] = useState<'all' | 'sent' | 'paid'>('all');
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [reminderToast, setReminderToast] = useState<string | null>(null);
@@ -75,7 +83,7 @@ const InvoicesPage: React.FC = () => {
                             </button>
                         </div>
 
-                        <div className="p-5 overflow-y-auto space-y-4">
+                        <div className="p-5 overflow-visible space-y-4">
                             <div className="flex justify-between items-center p-3 rounded-xl bg-background border border-border-light">
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-text-muted">Billed To</p>
@@ -99,7 +107,7 @@ const InvoicesPage: React.FC = () => {
                                             <p className="font-bold">{item.title}</p>
                                             <p className="text-[10px] text-text-muted">{item.details}</p>
                                         </div>
-                                        <span className="font-mono font-bold">{formatCurrency(item.amount)}</span>
+                                        <span className="font-mono font-bold">{formatCurrency(item.amount, settings.invoiceDefaults.currency)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -113,7 +121,7 @@ const InvoicesPage: React.FC = () => {
 
                             <div className="bg-ink p-4 rounded-xl text-white flex justify-between items-center">
                                 <span className="font-display text-sm">TOTAL AMOUNT</span>
-                                <span className="font-mono text-volt font-bold text-xl">{formatCurrency(calcTotal(selectedInvoice))}</span>
+                                <span className="font-mono text-volt font-bold text-xl">{formatCurrency(calcTotal(selectedInvoice), settings.invoiceDefaults.currency)}</span>
                             </div>
                         </div>
 
@@ -182,7 +190,7 @@ const InvoicesPage: React.FC = () => {
 
             {/* PDF Printable Invoice Modal */}
             {showPdfView && selectedInvoice && (
-                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 overflow-visible">
                     <div className="w-full max-w-xl bg-white rounded-3xl border-2 border-ink shadow-2xl overflow-hidden my-auto flex flex-col max-h-[95vh]">
                         {/* Action Header */}
                         <div className="bg-ink p-4 text-white flex justify-between items-center border-b-2 border-ink shrink-0">
@@ -218,7 +226,7 @@ const InvoicesPage: React.FC = () => {
                         </div>
 
                         {/* Printable Document Body */}
-                        <div className="p-8 overflow-y-auto text-ink font-inter bg-white" id="printable-invoice">
+                        <div className="p-8 overflow-visible text-ink font-inter bg-white" id="printable-invoice">
                             {/* Document Header with Logo & Business Profile */}
                             <div className="flex justify-between items-start border-b-2 border-ink pb-6 mb-6">
                                 <div className="mb-4">
@@ -284,9 +292,9 @@ const InvoicesPage: React.FC = () => {
                                                     <p className="text-[10px] text-text-muted mt-1">{item.details}</p>
                                                 </td>
                                                 <td className="py-3 px-3 text-center font-mono">{item.sessions || '-'}</td>
-                                                <td className="py-3 px-3 text-right font-mono">{item.rate ? formatCurrency(item.rate) : '-'}</td>
+                                                <td className="py-3 px-3 text-right font-mono">{item.rate ? formatCurrency(item.rate, settings.invoiceDefaults.currency) : '-'}</td>
                                                 <td className={`py-3 px-3 text-right font-mono font-bold ${item.amount < 0 ? 'text-emerald-700' : 'text-ink'}`}>
-                                                    {formatCurrency(item.amount)}
+                                                    {formatCurrency(item.amount, settings.invoiceDefaults.currency)}
                                                 </td>
                                             </tr>
                                         ))}
@@ -299,17 +307,17 @@ const InvoicesPage: React.FC = () => {
                                 <div className="w-64 text-xs">
                                     <div className="flex justify-between text-text-muted font-medium mb-2">
                                         <span>Subtotal:</span>
-                                        <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items))}</span>
+                                        <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items), settings.invoiceDefaults.currency)}</span>
                                     </div>
                                     {selectedInvoice.taxRate > 0 && (
                                         <div className="flex justify-between text-text-muted font-medium mb-2">
                                             <span>Tax ({(selectedInvoice.taxRate * 100).toFixed(0)}%):</span>
-                                            <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items) * selectedInvoice.taxRate)}</span>
+                                            <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items) * selectedInvoice.taxRate, settings.invoiceDefaults.currency)}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between items-center pt-2 mt-2 border-t-2 border-ink font-bold text-sm text-ink">
                                         <span>Total Balance Due:</span>
-                                        <span className="font-mono text-base font-extrabold text-primary">{formatCurrency(calcTotal(selectedInvoice))}</span>
+                                        <span className="font-mono text-base font-extrabold text-primary">{formatCurrency(calcTotal(selectedInvoice), settings.invoiceDefaults.currency)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -352,7 +360,7 @@ const InvoicesPage: React.FC = () => {
                             <Icon name="receipt_long" className="text-[14px]" />
                             <p className="text-[9px] font-bold uppercase tracking-wider">Billed This Month</p>
                         </div>
-                        <p className="font-display text-xl text-ink mt-1.5 leading-none">{formatCurrency(billedThisMonth)}</p>
+                        <p className="font-display text-xl text-ink mt-1.5 leading-none">{formatCurrency(billedThisMonth, settings.invoiceDefaults.currency)}</p>
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-ink text-white border-2 border-ink flex flex-col justify-between shadow-sm">
@@ -360,7 +368,7 @@ const InvoicesPage: React.FC = () => {
                             <Icon name="payments" className="text-[14px]" />
                             <p className="text-[9px] font-bold uppercase tracking-wider">Paid</p>
                         </div>
-                        <p className="font-display text-xl text-volt mt-1.5 leading-none">{formatCurrency(totalPaid)}</p>
+                        <p className="font-display text-xl text-volt mt-1.5 leading-none">{formatCurrency(totalPaid, settings.invoiceDefaults.currency)}</p>
                     </div>
 
                     <div className="p-3.5 rounded-2xl bg-white border-2 border-ink flex flex-col justify-between shadow-sm">
@@ -368,7 +376,7 @@ const InvoicesPage: React.FC = () => {
                             <Icon name="pending_actions" className="text-[14px]" />
                             <p className="text-[9px] font-bold uppercase tracking-wider">Outstanding</p>
                         </div>
-                        <p className="font-display text-xl text-primary mt-1.5 leading-none">{formatCurrency(totalPending)}</p>
+                        <p className="font-display text-xl text-primary mt-1.5 leading-none">{formatCurrency(totalPending, settings.invoiceDefaults.currency)}</p>
                     </div>
                 </div>
 
@@ -439,7 +447,7 @@ const InvoicesPage: React.FC = () => {
 
                                     <div className="flex justify-between items-center pt-2 border-t border-border-light text-xs">
                                         <span className="text-text-muted font-mono">#{inv.id.slice(-6).toUpperCase()}</span>
-                                        <span className="font-display text-lg text-ink font-mono">{formatCurrency(total)}</span>
+                                        <span className="font-display text-lg text-ink font-mono">{formatCurrency(total, settings.invoiceDefaults.currency)}</span>
                                     </div>
                                 </div>
                             );

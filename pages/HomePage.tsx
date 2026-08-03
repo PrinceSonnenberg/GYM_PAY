@@ -30,8 +30,8 @@ const HomePage: React.FC = () => {
     };
     const paidInvoices = invoices.filter(i => i.status === 'paid');
     const pendingInvoices = invoices.filter(i => i.status === 'sent');
-    const revenue = paidInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0);
-    const pending = pendingInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0);
+    const revenue = paidInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
+    const pending = pendingInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
     const recentExpenses = expenses.slice(0, 2);
     const clientName = (id: string) => clients.find(c => c.id === id)?.name || 'Unknown';
 
@@ -48,7 +48,7 @@ const HomePage: React.FC = () => {
         if (trendPeriod === 'This Month') {
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
-            const weeks = [0, 0, 0, 0];
+            let weeks: number[] = [0, 0, 0, 0];
             paidInvoices.forEach(inv => {
                 const d = new Date(inv.issuedDate || inv.dueDate || now);
                 if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
@@ -60,7 +60,7 @@ const HomePage: React.FC = () => {
                 }
             });
             // Default sample distribution if user has overall revenue but dates fall in single week or demo
-            if (weeks.every(w => w === 0) && revenue > 0) {
+            if (weeks.every(w => w === 0 as number) && revenue > 0) {
                 weeks[3] = revenue;
             }
             return {
@@ -72,7 +72,7 @@ const HomePage: React.FC = () => {
             const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const lm = lastMonthDate.getMonth();
             const ly = lastMonthDate.getFullYear();
-            const weeks = [0, 0, 0, 0];
+            let weeks: number[] = [0, 0, 0, 0];
             paidInvoices.forEach(inv => {
                 const d = new Date(inv.issuedDate || inv.dueDate || now);
                 if (d.getMonth() === lm && d.getFullYear() === ly) {
@@ -90,7 +90,7 @@ const HomePage: React.FC = () => {
             };
         } else {
             // Yearly
-            const quarters = [0, 0, 0, 0];
+            let quarters: number[] = [0, 0, 0, 0];
             const currentYear = now.getFullYear();
             paidInvoices.forEach(inv => {
                 const d = new Date(inv.issuedDate || inv.dueDate || now);
@@ -102,7 +102,7 @@ const HomePage: React.FC = () => {
                     else quarters[3] += invoiceTotal(inv);
                 }
             });
-            if (quarters.every(q => q === 0) && revenue > 0) {
+            if (quarters.every(q => q === 0 as number) && revenue > 0) {
                 quarters[2] = revenue;
             }
             return {

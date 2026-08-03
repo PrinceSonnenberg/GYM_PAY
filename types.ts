@@ -3,6 +3,7 @@ export interface ScheduleItem {
     time: string;
     period: 'AM' | 'PM';
     title: string;
+    category?: string;
     description: string;
     icon: string;
     type: 'video' | 'location' | 'default';
@@ -41,6 +42,7 @@ export interface ActiveGoal {
     iconBg: string;
     iconColor: string;
     title: string;
+    category?: string;
     description: string;
     progress: number;
     currentValue: string;
@@ -66,6 +68,7 @@ export interface InvoiceItem {
     iconBg: string;
     iconColor: string;
     title: string;
+    category?: string;
     details: string;
     amount: number;
     rate?: number;
@@ -75,6 +78,7 @@ export interface InvoiceItem {
 export interface ServicePreset {
     id: string;
     title: string;
+    category?: string;
     details: string;
     defaultRate: number;
     defaultSessions: number;
@@ -101,6 +105,7 @@ export interface UserSettings {
     profile: {
         name: string;
         title: string;
+    category?: string;
         email: string;
         phone: string;
         bio: string;

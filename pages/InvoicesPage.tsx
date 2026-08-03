@@ -218,14 +218,14 @@ const InvoicesPage: React.FC = () => {
                         </div>
 
                         {/* Printable Document Body */}
-                        <div className="p-8 overflow-y-auto space-y-6 text-ink font-inter bg-white" id="printable-invoice">
+                        <div className="p-8 overflow-y-auto text-ink font-inter bg-white" id="printable-invoice">
                             {/* Document Header with Logo & Business Profile */}
-                            <div className="flex justify-between items-start border-b-2 border-ink pb-6">
-                                <div className="space-y-2">
+                            <div className="flex justify-between items-start border-b-2 border-ink pb-6 mb-6">
+                                <div className="mb-4">
                                     {settings.profile.logoUrl ? (
-                                        <img src={settings.profile.logoUrl} alt="Business Logo" className="h-14 max-w-xs object-contain" />
+                                        <img src={settings.profile.logoUrl} alt="Business Logo" className="h-14 max-w-xs object-contain mb-2" />
                                     ) : (
-                                        <div className="size-12 rounded-2xl bg-ink text-volt font-display text-2xl flex items-center justify-center border-2 border-ink">
+                                        <div className="size-12 rounded-2xl bg-ink text-volt font-display text-2xl flex items-center justify-center border-2 border-ink mb-2">
                                             {settings.profile.name.charAt(0)}
                                         </div>
                                     )}
@@ -236,8 +236,8 @@ const InvoicesPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="text-right space-y-1">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                <div className="text-right">
+                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 ${
                                         selectedInvoice.status === 'paid' ? 'bg-signal text-white' : 'bg-danger text-white'
                                     }`}>
                                         INVOICE: {selectedInvoice.status.toUpperCase()}
@@ -249,23 +249,23 @@ const InvoicesPage: React.FC = () => {
                             </div>
 
                             {/* Customer Billed To */}
-                            <div className="p-4 rounded-2xl bg-background border border-border-light flex justify-between items-center">
+                            <div className="p-4 rounded-2xl bg-background border border-border-light flex justify-between items-center mb-6">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Billed Customer</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Billed Customer</p>
                                     <h4 className="font-bold text-base">{clientFor(selectedInvoice.clientId)?.name || 'Valued Client'}</h4>
                                     <p className="text-xs text-text-muted">{clientFor(selectedInvoice.clientId)?.email || 'Client Email N/A'}</p>
                                     {clientFor(selectedInvoice.clientId)?.phone && (
-                                        <p className="text-xs text-text-muted">{clientFor(selectedInvoice.clientId)?.phone}</p>
+                                        <p className="text-xs text-text-muted mt-1">{clientFor(selectedInvoice.clientId)?.phone}</p>
                                     )}
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Payment Term</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Payment Term</p>
                                     <p className="text-xs font-bold text-ink">Net 14 Days</p>
                                 </div>
                             </div>
 
                             {/* Itemized Table */}
-                            <div>
+                            <div className="mb-6">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Itemized Services & Credits</p>
                                 <table className="w-full border-collapse text-xs">
                                     <thead>
@@ -281,10 +281,10 @@ const InvoicesPage: React.FC = () => {
                                             <tr key={item.id} className="border-b border-border-light">
                                                 <td className="py-3 px-3">
                                                     <p className="font-bold text-ink">{item.title}</p>
-                                                    <p className="text-[10px] text-text-muted">{item.details}</p>
+                                                    <p className="text-[10px] text-text-muted mt-1">{item.details}</p>
                                                 </td>
-                                                <td className="py-3 px-3 text-center font-mono">{item.sessions}</td>
-                                                <td className="py-3 px-3 text-right font-mono">{formatCurrency(item.rate)}</td>
+                                                <td className="py-3 px-3 text-center font-mono">{item.sessions || '-'}</td>
+                                                <td className="py-3 px-3 text-right font-mono">{item.rate ? formatCurrency(item.rate) : '-'}</td>
                                                 <td className={`py-3 px-3 text-right font-mono font-bold ${item.amount < 0 ? 'text-emerald-700' : 'text-ink'}`}>
                                                     {formatCurrency(item.amount)}
                                                 </td>
@@ -295,19 +295,19 @@ const InvoicesPage: React.FC = () => {
                             </div>
 
                             {/* Totals Calculation */}
-                            <div className="flex justify-end pt-2">
-                                <div className="w-64 space-y-2 text-xs">
-                                    <div className="flex justify-between text-text-muted font-medium">
+                            <div className="flex justify-end pt-2 mb-6">
+                                <div className="w-64 text-xs">
+                                    <div className="flex justify-between text-text-muted font-medium mb-2">
                                         <span>Subtotal:</span>
                                         <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items))}</span>
                                     </div>
                                     {selectedInvoice.taxRate > 0 && (
-                                        <div className="flex justify-between text-text-muted font-medium">
+                                        <div className="flex justify-between text-text-muted font-medium mb-2">
                                             <span>Tax ({(selectedInvoice.taxRate * 100).toFixed(0)}%):</span>
                                             <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items) * selectedInvoice.taxRate)}</span>
                                         </div>
                                     )}
-                                    <div className="flex justify-between items-center pt-2 border-t-2 border-ink font-bold text-sm text-ink">
+                                    <div className="flex justify-between items-center pt-2 mt-2 border-t-2 border-ink font-bold text-sm text-ink">
                                         <span>Total Balance Due:</span>
                                         <span className="font-mono text-base font-extrabold text-primary">{formatCurrency(calcTotal(selectedInvoice))}</span>
                                     </div>
@@ -315,9 +315,9 @@ const InvoicesPage: React.FC = () => {
                             </div>
 
                             {/* Payment Instructions */}
-                            <div className="p-4 rounded-2xl bg-ink text-white text-xs space-y-1">
-                                <p className="text-[10px] font-bold uppercase text-volt tracking-widest">Payment Instructions</p>
-                                <p className="text-white/80">Please transfer payment to <strong>{settings.payout.method}</strong> linked account.</p>
+                            <div className="p-4 rounded-2xl bg-ink text-white text-xs">
+                                <p className="text-[10px] font-bold uppercase text-volt tracking-widest mb-1">Payment Instructions</p>
+                                <p className="text-white/80 mb-1">Please transfer payment to <strong>{settings.payout.method}</strong> linked account.</p>
                                 <p className="text-[10px] text-white/50 pt-1">Thank you for training with us!</p>
                             </div>
                         </div>

@@ -161,7 +161,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const settingsRes = await apiFetch('/api/settings');
                 if (settingsRes.ok) {
                     const data = await settingsRes.json();
-                    if (data) setSettings(data);
+                    if (data) {
+                        setSettings(prev => ({
+                            ...prev, 
+                            ...data, 
+                            homePreferences: { ...prev.homePreferences, ...(data.homePreferences || {}) }
+                        }));
+                    }
                 }
                 const clientsRes = await apiFetch('/api/clients');
                 if (clientsRes.ok) {

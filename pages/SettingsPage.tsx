@@ -367,18 +367,18 @@ const SettingsPage: React.FC = () => {
             {/* MODALS */}
             {/* Home Preferences Modal */}
             {activeModal === 'home' && (
-                <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex flex-col justify-end items-center">
-                    <div className="w-full max-w-md bg-background rounded-t-3xl border-t-2 border-ink h-[85vh] flex flex-col shadow-pop animate-slideUp">
-                        <div className="flex items-center justify-between border-b-2 border-ink p-5 bg-white rounded-t-3xl sticky top-0 z-10">
+                <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="w-full max-w-sm rounded-3xl bg-white border-2 border-ink overflow-hidden shadow-pop animate-slideUp flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between border-b-2 border-ink p-5 bg-background">
                             <div>
                                 <h2 className="font-display text-xl text-ink">HOME SCREEN</h2>
-                                <p className="text-xs text-text-muted">Toggle visibility of dashboard widgets</p>
+                                <p className="text-xs text-text-muted">Toggle visibility of widgets</p>
                             </div>
                             <button onClick={() => setActiveModal(null)} className="flex items-center justify-center size-8 rounded-full border-2 border-ink hover:bg-black hover:text-white transition-colors">
                                 <Icon name="close" className="text-[18px]" />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-5 space-y-3 pb-safe">
+                        <div className="p-5 overflow-y-auto space-y-3 pb-safe">
                             {[
                                 { key: 'showRevenue', label: 'Revenue & Pending', desc: 'Top cards showing financial overview' },
                                 { key: 'showIncomeTrend', label: 'Income Trend', desc: 'Chart displaying revenue over time' },
@@ -394,12 +394,10 @@ const SettingsPage: React.FC = () => {
                                     </div>
                                     <button 
                                         onClick={() => {
-                                            const currentPrefs = settings.homePreferences || {
-                                                showRevenue: true, showIncomeTrend: true, showQuickActions: true,
-                                                showSchedule: true, showExpenses: true, showPendingInvoices: true
-                                            };
                                             // @ts-ignore
-                                            updateHomePreferences({ [key]: !currentPrefs[key] });
+                                            const currentValue = settings.homePreferences?.[key] ?? true;
+                                            // @ts-ignore
+                                            updateHomePreferences({ [key]: !currentValue });
                                         }}
                                         className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-ink transition-colors duration-200 ease-in-out focus:outline-none ${
                                             // @ts-ignore

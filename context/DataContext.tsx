@@ -1,6 +1,6 @@
 import { apiFetch } from "../utils/api";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Client, Invoice, InvoiceItem, ExpenseItem, ActiveGoal, Session, SessionAttendanceStatus, UserSettings, ServicePreset } from '../types';
 import { DEFAULT_SERVICES } from '../data/servicesData';
 
@@ -30,6 +30,14 @@ const defaultUserSettings: UserSettings = {
     uiTheme: { 
         preset: "energetic", 
     },
+    homePreferences: {
+        showRevenue: true,
+        showIncomeTrend: true,
+        showQuickActions: true,
+        showSchedule: true,
+        showExpenses: true,
+        showPendingInvoices: true,
+    },
     invoiceDefaults: {
         defaultDueDays: 14,
         defaultTaxRate: 0.05,
@@ -47,6 +55,7 @@ interface DataContextType {
     services: ServicePreset[];
     settings: UserSettings;
     updateUiTheme: (theme: Partial<UserSettings["uiTheme"]>) => void;
+    updateHomePreferences: (prefs: Partial<UserSettings["homePreferences"]>) => void;
     addClient: (name: string, email?: string, phone?: string, status?: 'On Track' | 'At Risk' | 'New') => Client;
     updateClient: (id: string, updates: Partial<Client>) => void;
     deleteClient: (id: string) => void;
@@ -137,39 +146,109 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [services, setServices] = useState<ServicePreset[]>(DEFAULT_SERVICES);
     const [settings, setSettings] = useState<UserSettings>(defaultUserSettings);
 
+    
+    const saveSettingsToDb = (newSettings: UserSettings) => {
+        apiFetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newSettings),
+        }).catch(err => console.error('Cloud SQL sync error (settings):', err));
+    };
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const settingsRes = await apiFetch('/api/settings');
+                if (settingsRes.ok) {
+                    const data = await settingsRes.json();
+                    if (data) setSettings(data);
+                }
+                const clientsRes = await apiFetch('/api/clients');
+                if (clientsRes.ok) {
+                    const data = await clientsRes.json();
+                    if (data && data.length > 0) setClients(data);
+                }
+                const invoicesRes = await apiFetch('/api/invoices');
+                if (invoicesRes.ok) {
+                    const data = await invoicesRes.json();
+                    if (data && data.length > 0) setInvoices(data);
+                }
+                const goalsRes = await apiFetch('/api/goals');
+                if (goalsRes.ok) {
+                    const data = await goalsRes.json();
+                    if (data && data.length > 0) setGoals(data);
+                }
+                const expensesRes = await apiFetch('/api/expenses');
+                if (expensesRes.ok) {
+                    const data = await expensesRes.json();
+                    if (data && data.length > 0) setExpenses(data);
+                }
+                const sessionsRes = await apiFetch('/api/sessions');
+                if (sessionsRes.ok) {
+                    const data = await sessionsRes.json();
+                    if (data && data.length > 0) setSessions(data);
+                }
+            } catch (err) {
+                console.error('Error loading initial data from DB:', err);
+            }
+        };
+        loadData();
+    }, []);
+
     const updateProfile = (profileUpdates: Partial<UserSettings['profile']>) => {
-        setSettings(prev => ({
-            ...prev,
-            profile: { ...prev.profile, ...profileUpdates },
-        }));
+        setSettings(prev => {
+            const next = { ...prev, profile: { ...prev.profile, ...profileUpdates } };
+            saveSettingsToDb(next);
+            return next;
+        });
     };
 
     const updatePayout = (payoutUpdates: Partial<UserSettings['payout']>) => {
-        setSettings(prev => ({
-            ...prev,
-            payout: { ...prev.payout, ...payoutUpdates },
-        }));
+        setSettings(prev => {
+            const next = { ...prev, payout: { ...prev.payout, ...payoutUpdates } };
+            saveSettingsToDb(next);
+            return next;
+        });
     };
 
     const updateNotifications = (notifUpdates: Partial<UserSettings['notifications']>) => {
-        setSettings(prev => ({
-            ...prev,
-            notifications: { ...prev.notifications, ...notifUpdates },
-        }));
+        setSettings(prev => {
+            const next = { ...prev, notifications: { ...prev.notifications, ...notifUpdates } };
+            saveSettingsToDb(next);
+            return next;
+        });
+    };
+
+
+    const updateHomePreferences = (prefs: Partial<UserSettings['homePreferences']>) => {
+        setSettings(prev => {
+            const next = { ...prev, homePreferences: { ...(prev.homePreferences || {
+                showRevenue: true,
+                showIncomeTrend: true,
+                showQuickActions: true,
+                showSchedule: true,
+                showExpenses: true,
+                showPendingInvoices: true,
+            }), ...prefs } };
+            saveSettingsToDb(next);
+            return next;
+        });
     };
 
     const updateUiTheme = (themeUpdates: Partial<UserSettings['uiTheme']>) => {
-        setSettings(prev => ({
-            ...prev,
-            uiTheme: { ...(prev.uiTheme || { preset: "energetic" }), ...themeUpdates },
-        }));
+        setSettings(prev => {
+            const next = { ...prev, uiTheme: { ...(prev.uiTheme || { preset: "energetic" }), ...themeUpdates } };
+            saveSettingsToDb(next);
+            return next;
+        });
     };
 
     const updateInvoiceDefaults = (defaultUpdates: Partial<UserSettings['invoiceDefaults']>) => {
-        setSettings(prev => ({
-            ...prev,
-            invoiceDefaults: { ...prev.invoiceDefaults, ...defaultUpdates },
-        }));
+        setSettings(prev => {
+            const next = { ...prev, invoiceDefaults: { ...prev.invoiceDefaults, ...defaultUpdates } };
+            saveSettingsToDb(next);
+            return next;
+        });
     };
 
     const resetAllData = () => {
@@ -351,6 +430,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 updatePayout,
                 updateNotifications,
                 updateUiTheme,
+                updateHomePreferences,
                 updateInvoiceDefaults,
                 resetAllData,
             }}

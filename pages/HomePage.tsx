@@ -168,6 +168,8 @@ const HomePage: React.FC = () => {
                 </button>
             </header>
             <main className="flex-1 px-5 space-y-6 pt-6 pb-28">
+                
+                {(settings.homePreferences?.showRevenue ?? true) && (
                 <section className="grid grid-cols-2 gap-4">
                     <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-3 bg-ink p-5 text-white cursor-pointer hover:opacity-95 transition-opacity">
                         <div className="flex items-center gap-2 text-white/60">
@@ -196,7 +198,8 @@ const HomePage: React.FC = () => {
                         </div>
                     </div>
                 </section>
-
+                )}
+                {(settings.homePreferences?.showIncomeTrend ?? true) && (
                 <section className="plate bg-surface p-6 border-2 border-ink">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
@@ -268,6 +271,8 @@ const HomePage: React.FC = () => {
                         ))}
                     </div>
                 </section>
+                )}
+                {(settings.homePreferences?.showQuickActions ?? true) && (
                 <section>
                     <h3 className="mb-4 text-xs font-bold text-text-muted uppercase tracking-widest px-1">Quick Actions</h3>
                     <div className="grid grid-cols-3 gap-3">
@@ -285,6 +290,8 @@ const HomePage: React.FC = () => {
                         </button>
                     </div>
                 </section>
+                )}
+                {(settings.homePreferences?.showSchedule ?? true) && (
                 <section>
                     <div className="mb-4 flex items-center justify-between px-1">
                         <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">Today's Schedule</h3>
@@ -323,6 +330,8 @@ const HomePage: React.FC = () => {
                         </div>
                     )}
                 </section>
+                )}
+                {(settings.homePreferences?.showExpenses ?? true) && (
                 <section>
                     <div className="mb-4 flex items-center justify-between px-1">
                         <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">Recent Expenses</h3>
@@ -345,8 +354,10 @@ const HomePage: React.FC = () => {
                         ))}
                     </div>
                 </section>
-                {pendingInvoices.length > 0 && (
-                    <section>
+                )}
+                
+                {(settings.homePreferences?.showPendingInvoices ?? true) && pendingInvoices.length > 0 && (
+                <section>
                         <div className="mb-4 flex items-center justify-between px-1">
                             <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">Pending Invoices</h3>
                         </div>

@@ -129,6 +129,14 @@ export interface UserSettings {
     uiTheme?: { 
         preset: "energetic" | "ocean" | "sunset"; 
     };
+    homePreferences?: {
+        showRevenue: boolean;
+        showIncomeTrend: boolean;
+        showQuickActions: boolean;
+        showSchedule: boolean;
+        showExpenses: boolean;
+        showPendingInvoices: boolean;
+    };
     invoiceDefaults: {
         defaultDueDays: number;
         defaultTaxRate: number; // e.g. 0.05

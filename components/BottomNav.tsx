@@ -91,7 +91,7 @@ const BottomNav: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-sm text-ink transition-colors">New Client</p>
-                                    <p className="text-[11px] text-text-muted truncate">Add a customer to your roster</p>
+                                    <p className="text-[11px] text-text-muted truncate">Add a client to your roster</p>
                                 </div>
                                 <Icon name="chevron_right" className="text-text-muted text-[18px] shrink-0" />
                             </button>

@@ -150,7 +150,7 @@ const InvoicesPage: React.FC = () => {
                                     <button
                                         onClick={() => {
                                             sendInvoiceReminder(selectedInvoice.id);
-                                            const cName = clientFor(selectedInvoice.clientId)?.name || 'Customer';
+                                            const cName = clientFor(selectedInvoice.clientId)?.name || 'Client';
                                             setReminderToast(`Overdue reminder sent to ${cName} via Email & SMS!`);
                                             setSelectedInvoice(prev => prev ? {
                                                 ...prev,
@@ -256,10 +256,10 @@ const InvoicesPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Customer Billed To */}
+                            {/* Client Billed To */}
                             <div className="p-4 rounded-2xl bg-background border border-border-light flex justify-between items-center mb-6">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Billed Customer</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Billed Client</p>
                                     <h4 className="font-bold text-base">{clientFor(selectedInvoice.clientId)?.name || 'Valued Client'}</h4>
                                     <p className="text-xs text-text-muted">{clientFor(selectedInvoice.clientId)?.email || 'Client Email N/A'}</p>
                                     {clientFor(selectedInvoice.clientId)?.phone && (
@@ -325,8 +325,10 @@ const InvoicesPage: React.FC = () => {
                             {/* Payment Instructions */}
                             <div className="p-4 rounded-2xl bg-ink text-white text-xs">
                                 <p className="text-[10px] font-bold uppercase text-volt tracking-widest mb-1">Payment Instructions</p>
-                                <p className="text-white/80 mb-1">Please transfer payment to <strong>{settings.payout.method}</strong> linked account.</p>
-                                <p className="text-[10px] text-white/50 pt-1">Thank you for training with us!</p>
+                                <p className="text-white/80 mb-1">Please transfer payment to <strong>{settings.profile.name}</strong> via <strong>{settings.payout.method}</strong>.</p>
+                                {settings.payout.accountNumberLast4 && <p className="text-white/80 mb-1">Account ending in: •••• {settings.payout.accountNumberLast4}</p>}
+                                {settings.payout.routingNumber && <p className="text-white/80 mb-1">Routing: {settings.payout.routingNumber}</p>}
+                                <p className="text-[10px] text-white/50 pt-2">Thank you for training with us!</p>
                             </div>
                         </div>
 
@@ -400,7 +402,7 @@ const InvoicesPage: React.FC = () => {
                     <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-2xl border-2 border-ink p-6">
                         <Icon name="receipt_long" className="text-5xl text-text-muted mb-3" />
                         <h3 className="font-display text-lg tracking-wide">NO INVOICES FOUND</h3>
-                        <p className="text-xs text-text-muted mt-1 max-w-xs">Create your first invoice to bill customers for training sessions or meal plans.</p>
+                        <p className="text-xs text-text-muted mt-1 max-w-xs">Create your first invoice to bill clients for training sessions or meal plans.</p>
                         <button
                             onClick={() => navigate('/invoice')}
                             className="mt-4 px-5 py-2.5 rounded-full bg-primary text-white font-bold uppercase text-xs tracking-wide border-2 border-ink shadow-pop"

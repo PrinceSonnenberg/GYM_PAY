@@ -1,6 +1,7 @@
 import { apiFetch } from "../utils/api";
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { auth } from '../src/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { Client, Invoice, InvoiceItem, ExpenseItem, ActiveGoal, Session, SessionAttendanceStatus, UserSettings, ServicePreset } from '../types';
 import { DEFAULT_SERVICES } from '../data/servicesData';
 
@@ -198,7 +199,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.error('Error loading initial data from DB:', err);
             }
         };
+
         loadData();
+
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loadData();
+            }
+        });
+        
+        return () => unsubscribe();
     }, []);
 
     const updateProfile = (profileUpdates: Partial<UserSettings['profile']>) => {

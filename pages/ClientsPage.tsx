@@ -153,7 +153,7 @@ const ClientsPage: React.FC = () => {
                 <div className="p-5 bg-white border-b-2 border-ink space-y-4 shadow-lg animate-fadeIn">
                     <div className="flex items-center justify-between border-b pb-2 border-border-light">
                         <h3 className="font-display text-base tracking-wide text-ink">
-                            {editingClient ? 'EDIT CLIENT DETAILS' : 'CREATE NEW CUSTOMER'}
+                            {editingClient ? 'EDIT CLIENT DETAILS' : 'CREATE NEW CLIENT'}
                         </h3>
                         <span className="text-xs text-text-muted font-bold">Required fields marked *</span>
                     </div>
@@ -213,7 +213,7 @@ const ClientsPage: React.FC = () => {
                             disabled={!name.trim()}
                             className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wide py-3 hover:bg-primary-hover transition-colors disabled:opacity-40 shadow-sm"
                         >
-                            {editingClient ? 'Save Changes' : 'Create Customer'}
+                            {editingClient ? 'Save Changes' : 'Create Client'}
                         </button>
                         <button
                             onClick={resetForm}
@@ -231,10 +231,10 @@ const ClientsPage: React.FC = () => {
                         <Icon name="groups" className="text-5xl" />
                     </div>
                     <h2 className="font-display text-xl tracking-wide text-text-main">NO CLIENT ROSTER YET</h2>
-                    <p className="text-text-muted mt-2 max-w-xs text-sm">Add your first customer to manage goals and invoices cleanly.</p>
+                    <p className="text-text-muted mt-2 max-w-xs text-sm">Add your first client to manage goals and invoices cleanly.</p>
                     <button onClick={() => setShowForm(true)} className="mt-6 flex items-center gap-2 rounded-full bg-primary text-white border-2 border-ink px-6 py-3 font-bold uppercase text-sm tracking-wide shadow-pop transition-all active:translate-y-1.5 active:shadow-none">
                         <Icon name="person_add" className="text-[20px]" />
-                        Add a Customer
+                        Add a Client
                     </button>
                 </main>
             ) : (

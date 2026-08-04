@@ -56,8 +56,8 @@ const NewInvoicePage: React.FC = () => {
     const [itemDetails, setItemDetails] = useState('');
     const [showItemForm, setShowItemForm] = useState(false);
     
-    // Inline quick customer creation modal
-    const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+    // Inline quick client creation modal
+    const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newCustName, setNewCustName] = useState('');
     const [newCustEmail, setNewCustEmail] = useState('');
     const [newCustPhone, setNewCustPhone] = useState('');
@@ -142,21 +142,21 @@ const NewInvoicePage: React.FC = () => {
         }]);
     };
 
-    const handleCreateCustomer = () => {
+    const handleCreateClient = () => {
         if (!newCustName.trim()) return;
         const created = addClient(newCustName, newCustEmail, newCustPhone);
         setClientId(created.id);
         setNewCustName('');
         setNewCustEmail('');
         setNewCustPhone('');
-        setShowAddCustomerModal(false);
+        setShowAddClientModal(false);
         setErrorMessage('');
     };
 
     const handleSend = () => {
         setErrorMessage('');
         if (!clientId) {
-            setErrorMessage('Customer details required! Please select or add a customer to bill.');
+            setErrorMessage('Client details required! Please select or add a client to bill.');
             return;
         }
         if (dueDate < todayISO()) {
@@ -217,7 +217,7 @@ const NewInvoicePage: React.FC = () => {
                             <div className="bg-background rounded-2xl p-4 border border-border-light space-y-2 text-xs">
                                 <div className="flex justify-between">
                                     <span className="text-text-muted uppercase font-bold text-[10px]">Billed To</span>
-                                    <span className="font-bold text-text-main text-sm">{selectedClient?.name || 'Customer'}</span>
+                                    <span className="font-bold text-text-main text-sm">{selectedClient?.name || 'Client'}</span>
                                 </div>
                                 {selectedClient?.email && (
                                     <div className="flex justify-between text-text-muted">
@@ -393,7 +393,7 @@ const NewInvoicePage: React.FC = () => {
 
                             <div className="p-4 rounded-2xl bg-background border border-border-light flex justify-between items-center mb-6">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Billed Customer</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Billed Client</p>
                                     <h4 className="font-bold text-base">{selectedClient?.name || 'Valued Client'}</h4>
                                     <p className="text-xs text-text-muted">{selectedClient?.email || 'Client Email N/A'}</p>
                                     {selectedClient?.phone && (
@@ -456,8 +456,10 @@ const NewInvoicePage: React.FC = () => {
 
                             <div className="p-4 rounded-2xl bg-ink text-white text-xs">
                                 <p className="text-[10px] font-bold uppercase text-volt tracking-widest mb-1">Payment Instructions</p>
-                                <p className="text-white/80 mb-1">Please transfer payment to <strong>{settings.payout.method}</strong> linked account.</p>
-                                <p className="text-[10px] text-white/50 pt-1">Thank you for training with us!</p>
+                                <p className="text-white/80 mb-1">Please transfer payment to <strong>{settings.profile.name}</strong> via <strong>{settings.payout.method}</strong>.</p>
+                                {settings.payout.accountNumberLast4 && <p className="text-white/80 mb-1">Account ending in: •••• {settings.payout.accountNumberLast4}</p>}
+                                {settings.payout.routingNumber && <p className="text-white/80 mb-1">Routing: {settings.payout.routingNumber}</p>}
+                                <p className="text-[10px] text-white/50 pt-2">Thank you for training with us!</p>
                             </div>
                         </div>
 
@@ -473,20 +475,20 @@ const NewInvoicePage: React.FC = () => {
                 </div>
             )}
 
-            {/* Inline Add Customer Modal */}
-            {showAddCustomerModal && (
+            {/* Inline Add Client Modal */}
+            {showAddClientModal && (
                 <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink p-6 space-y-4 shadow-2xl animate-fadeIn">
                         <div className="flex items-center justify-between border-b pb-3 border-border-light">
-                            <h3 className="font-display text-lg tracking-wide text-ink">ADD NEW CUSTOMER</h3>
-                            <button onClick={() => setShowAddCustomerModal(false)} className="text-text-muted hover:text-ink">
+                            <h3 className="font-display text-lg tracking-wide text-ink">ADD NEW CLIENT</h3>
+                            <button onClick={() => setShowAddClientModal(false)} className="text-text-muted hover:text-ink">
                                 <Icon name="close" />
                             </button>
                         </div>
 
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Customer Name *</label>
+                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Client Name *</label>
                                 <input
                                     autoFocus
                                     value={newCustName}
@@ -519,14 +521,14 @@ const NewInvoicePage: React.FC = () => {
 
                         <div className="flex gap-2 pt-2">
                             <button
-                                onClick={handleCreateCustomer}
+                                onClick={handleCreateClient}
                                 disabled={!newCustName.trim()}
                                 className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wide py-3 hover:bg-primary-hover transition-colors disabled:opacity-40"
                             >
-                                Save Customer
+                                Save Client
                             </button>
                             <button
-                                onClick={() => setShowAddCustomerModal(false)}
+                                onClick={() => setShowAddClientModal(false)}
                                 className="rounded-xl border-2 border-ink font-bold uppercase text-xs tracking-wide px-4 hover:bg-background transition-colors"
                             >
                                 Cancel
@@ -547,17 +549,17 @@ const NewInvoicePage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Bill To Customer Selector */}
+                {/* Bill To Client Selector */}
                 <section className="px-5 pt-6 pb-2">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-text-muted text-[10px] font-bold uppercase tracking-widest ml-1">Bill To Customer</span>
+                        <span className="text-text-muted text-[10px] font-bold uppercase tracking-widest ml-1">Bill To Client</span>
                         <button
                             type="button"
-                            onClick={() => setShowAddCustomerModal(true)}
+                            onClick={() => setShowAddClientModal(true)}
                             className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1 uppercase tracking-wide"
                         >
                             <Icon name="person_add" className="text-[16px]" />
-                            <span>+ Add Customer</span>
+                            <span>+ Add Client</span>
                         </button>
                     </div>
 
@@ -571,7 +573,7 @@ const NewInvoicePage: React.FC = () => {
                             className="w-full h-14 pl-4 pr-10 rounded-xl bg-white border-2 border-ink font-bold text-base focus:ring-0 focus:border-primary transition-all outline-none cursor-pointer"
                             style={{ appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2314161f\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                         >
-                            <option value="" disabled>-- Select Customer --</option>
+                            <option value="" disabled>-- Select Client --</option>
                             {clients.map(c => (
                                 <option key={c.id} value={c.id}>
                                     {c.name} {c.email ? `(${c.email})` : ''}

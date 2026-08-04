@@ -601,10 +601,11 @@ const SettingsPage: React.FC = () => {
                             <div>
                                 <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Account Holder Name</label>
                                 <input
-                                    value={accountHolder}
-                                    onChange={e => setAccountHolder(e.target.value)}
-                                    className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
+                                    value={settings.profile.name}
+                                    disabled
+                                    className="w-full rounded-xl bg-background border-2 border-border-light text-text-muted px-4 py-2.5 font-bold text-sm cursor-not-allowed"
                                 />
+                                <p className="text-[10px] text-text-muted mt-1">This pulls from your Coach Profile Full Name.</p>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>

@@ -12,6 +12,7 @@ import BottomNav from './components/BottomNav';
 
 const App: React.FC = () => {
     const location = useLocation();
+
     const showBottomNav = ['/', '/clients', '/calendar', '/settings', '/invoices'].includes(location.pathname);
 
     // Expenses & Invoices manage their layout cleanly

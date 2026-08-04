@@ -256,6 +256,7 @@ async function startServer() {
   app.get("/api/settings", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
+      await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
       const result = await db.select().from(settings).where(eq(settings.userId, uid));
       res.json(result[0]?.data || null);
     } catch (error: any) {
@@ -267,6 +268,7 @@ async function startServer() {
   app.post("/api/settings", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
+      await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
       const result = await db
         .insert(settings)
         .values({ userId: uid, data: req.body })

@@ -57,13 +57,13 @@ const NewInvoicePage: React.FC = () => {
     const [itemDetails, setItemDetails] = useState('');
     const [showItemForm, setShowItemForm] = useState(false);
     
-    // Inline quick client creation modal
+    // Inline quick client creation modal state
     const [showAddClientModal, setShowAddClientModal] = useState(false);
-    const [newCustName, setNewCustName] = useState('');
-    const [newCustEmail, setNewCustEmail] = useState('');
-    const [newCustPhone, setNewCustPhone] = useState('');
+    const [newClientName, setNewClientName] = useState('');
+    const [newClientEmail, setNewClientEmail] = useState('');
+    const [newClientPhone, setNewClientPhone] = useState('');
 
-    // Error & Success state
+    // Error & Success notification state
     const [errorMessage, setErrorMessage] = useState('');
     const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);
     const [showPdfView, setShowPdfView] = useState(false);
@@ -143,21 +143,28 @@ const NewInvoicePage: React.FC = () => {
         }]);
     };
 
+    /**
+     * Handles quick client creation modal submission.
+     * Validates client rules before saving and selecting the new client.
+     */
     const handleCreateClient = () => {
-        const clientErrors = validateClient({ name: newCustName, email: newCustEmail, phone: newCustPhone });
+        const clientErrors = validateClient({ name: newClientName, email: newClientEmail, phone: newClientPhone });
         if (clientErrors.length > 0) {
             setErrorMessage(clientErrors[0]);
             return;
         }
-        const created = addClient(newCustName, newCustEmail, newCustPhone);
-        setClientId(created.id);
-        setNewCustName('');
-        setNewCustEmail('');
-        setNewCustPhone('');
+        const createdClient = addClient(newClientName, newClientEmail, newClientPhone);
+        setClientId(createdClient.id);
+        setNewClientName('');
+        setNewClientEmail('');
+        setNewClientPhone('');
         setShowAddClientModal(false);
         setErrorMessage('');
     };
 
+    /**
+     * Validates and submits the final invoice for creation.
+     */
     const handleSend = () => {
         setErrorMessage('');
         const invoiceErrors = validateInvoice({
@@ -490,8 +497,8 @@ const NewInvoicePage: React.FC = () => {
                                 <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Client Name *</label>
                                 <input
                                     autoFocus
-                                    value={newCustName}
-                                    onChange={e => setNewCustName(e.target.value)}
+                                    value={newClientName}
+                                    onChange={e => setNewClientName(e.target.value)}
                                     placeholder="e.g. Alex Morgan"
                                     className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
                                 />
@@ -500,8 +507,8 @@ const NewInvoicePage: React.FC = () => {
                                 <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Email Address</label>
                                 <input
                                     type="email"
-                                    value={newCustEmail}
-                                    onChange={e => setNewCustEmail(e.target.value)}
+                                    value={newClientEmail}
+                                    onChange={e => setNewClientEmail(e.target.value)}
                                     placeholder="alex@example.com"
                                     className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
                                 />
@@ -510,8 +517,8 @@ const NewInvoicePage: React.FC = () => {
                                 <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Phone Number</label>
                                 <input
                                     type="tel"
-                                    value={newCustPhone}
-                                    onChange={e => setNewCustPhone(e.target.value)}
+                                    value={newClientPhone}
+                                    onChange={e => setNewClientPhone(e.target.value)}
                                     placeholder="(555) 123-4567"
                                     className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
                                 />
@@ -521,7 +528,7 @@ const NewInvoicePage: React.FC = () => {
                         <div className="flex gap-2 pt-2">
                             <button
                                 onClick={handleCreateClient}
-                                disabled={!newCustName.trim()}
+                                disabled={!newClientName.trim()}
                                 className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wide py-3 hover:bg-primary-hover transition-colors disabled:opacity-40"
                             >
                                 Save Client

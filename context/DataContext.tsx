@@ -148,6 +148,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [settings, setSettings] = useState<UserSettings>(defaultUserSettings);
 
     
+    /**
+     * Persists updated user settings to the backend database.
+     */
     const saveSettingsToDb = (newSettings: UserSettings) => {
         apiFetch('/api/settings', {
             method: 'POST',
@@ -156,52 +159,68 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }).catch(err => console.error('Cloud SQL sync error (settings):', err));
     };
 
+    /**
+     * Loads initial application state (settings, clients, invoices, goals, expenses, sessions)
+     * from the backend server database once Firebase authentication state has initialized.
+     */
     useEffect(() => {
-        const loadData = async () => {
+        const fetchInitialAppData = async () => {
             try {
+                // Fetch saved user settings and preferences
                 const settingsRes = await apiFetch('/api/settings');
                 if (settingsRes.ok) {
-                    const data = await settingsRes.json();
-                    if (data) {
+                    const settingsData = await settingsRes.json();
+                    if (settingsData) {
                         setSettings(prev => ({
                             ...prev, 
-                            ...data, 
-                            homePreferences: { ...prev.homePreferences, ...(data.homePreferences || {}) }
+                            ...settingsData, 
+                            homePreferences: { ...prev.homePreferences, ...(settingsData.homePreferences || {}) }
                         }));
                     }
                 }
+
+                // Fetch clients list
                 const clientsRes = await apiFetch('/api/clients');
                 if (clientsRes.ok) {
-                    const data = await clientsRes.json();
-                    if (data && data.length > 0) setClients(data);
+                    const clientsData = await clientsRes.json();
+                    if (clientsData && clientsData.length > 0) setClients(clientsData);
                 }
+
+                // Fetch invoices list
                 const invoicesRes = await apiFetch('/api/invoices');
                 if (invoicesRes.ok) {
-                    const data = await invoicesRes.json();
-                    if (data && data.length > 0) setInvoices(data);
+                    const invoicesData = await invoicesRes.json();
+                    if (invoicesData && invoicesData.length > 0) setInvoices(invoicesData);
                 }
+
+                // Fetch client goals
                 const goalsRes = await apiFetch('/api/goals');
                 if (goalsRes.ok) {
-                    const data = await goalsRes.json();
-                    if (data && data.length > 0) setGoals(data);
+                    const goalsData = await goalsRes.json();
+                    if (goalsData && goalsData.length > 0) setGoals(goalsData);
                 }
+
+                // Fetch expenses list
                 const expensesRes = await apiFetch('/api/expenses');
                 if (expensesRes.ok) {
-                    const data = await expensesRes.json();
-                    if (data && data.length > 0) setExpenses(data);
+                    const expensesData = await expensesRes.json();
+                    if (expensesData && expensesData.length > 0) setExpenses(expensesData);
                 }
+
+                // Fetch calendar training sessions
                 const sessionsRes = await apiFetch('/api/sessions');
                 if (sessionsRes.ok) {
-                    const data = await sessionsRes.json();
-                    if (data && data.length > 0) setSessions(data);
+                    const sessionsData = await sessionsRes.json();
+                    if (sessionsData && sessionsData.length > 0) setSessions(sessionsData);
                 }
             } catch (err) {
                 console.error('Error loading initial data from DB:', err);
             }
         };
 
+        // Listen for Firebase authentication state readiness before fetching user data
         const unsubscribe = onAuthStateChanged(auth, (_user) => {
-            loadData();
+            fetchInitialAppData();
         });
         
         return () => unsubscribe();

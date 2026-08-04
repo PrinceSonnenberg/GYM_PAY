@@ -38,13 +38,16 @@ const ClientsPage: React.FC = () => {
     const [showContactInfo, setShowContactInfo] = useState(false);
     const [activeAttendanceSession, setActiveAttendanceSession] = useState<Session | null>(null);
 
-    // Form state
+    // Form state for creating or editing clients
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [status, setStatus] = useState<'On Track' | 'At Risk' | 'New'>('New');
     const [formError, setFormError] = useState<string | null>(null);
 
+    /**
+     * Resets form fields and closes modal dialogs.
+     */
     const resetForm = () => {
         setName('');
         setEmail('');
@@ -55,6 +58,9 @@ const ClientsPage: React.FC = () => {
         setEditingClient(null);
     };
 
+    /**
+     * Creates a new client record after validating input fields.
+     */
     const handleAdd = () => {
         setFormError(null);
         const errors = validateClient({ name, email, phone });
@@ -67,6 +73,9 @@ const ClientsPage: React.FC = () => {
         navigate(`/clients/${newClient.id}/goals`);
     };
 
+    /**
+     * Updates an existing client record after validating input fields.
+     */
     const handleUpdate = () => {
         if (!editingClient) return;
         setFormError(null);
@@ -84,6 +93,9 @@ const ClientsPage: React.FC = () => {
         resetForm();
     };
 
+    /**
+     * Populates form state to edit an existing client.
+     */
     const startEditing = (client: Client, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditingClient(client);

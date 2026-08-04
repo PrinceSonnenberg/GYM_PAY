@@ -200,12 +200,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
         };
 
-        loadData();
-
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                loadData();
-            }
+        const unsubscribe = onAuthStateChanged(auth, (_user) => {
+            loadData();
         });
         
         return () => unsubscribe();

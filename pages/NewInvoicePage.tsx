@@ -6,6 +6,7 @@ import { useData } from '../context/DataContext';
 import { InvoiceItem, Invoice } from '../types';
 import { formatCurrency, invoiceSubtotal } from '../utils/format';
 import { downloadInvoicePdf } from '../utils/pdf';
+import { validateClient, validateInvoice } from '../utils/validation';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const plusDaysISO = (days: number) => {
@@ -143,7 +144,11 @@ const NewInvoicePage: React.FC = () => {
     };
 
     const handleCreateClient = () => {
-        if (!newCustName.trim()) return;
+        const clientErrors = validateClient({ name: newCustName, email: newCustEmail, phone: newCustPhone });
+        if (clientErrors.length > 0) {
+            setErrorMessage(clientErrors[0]);
+            return;
+        }
         const created = addClient(newCustName, newCustEmail, newCustPhone);
         setClientId(created.id);
         setNewCustName('');
@@ -155,20 +160,14 @@ const NewInvoicePage: React.FC = () => {
 
     const handleSend = () => {
         setErrorMessage('');
-        if (!clientId) {
-            setErrorMessage('Client details required! Please select or add a client to bill.');
-            return;
-        }
-        if (dueDate < todayISO()) {
-            setErrorMessage('Due date cannot be set to a past date. Please select today or a future date.');
-            return;
-        }
-        if (items.length === 0) {
-            setErrorMessage('Please add at least one line item/service.');
-            return;
-        }
-        if (total <= 0) {
-            setErrorMessage('Invoice total balance cannot be zero or negative. Please add billable line items or adjust credits.');
+        const invoiceErrors = validateInvoice({
+            clientId,
+            items,
+            dueDate,
+            issuedDate,
+        });
+        if (invoiceErrors.length > 0) {
+            setErrorMessage(invoiceErrors[0]);
             return;
         }
 

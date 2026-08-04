@@ -7,6 +7,7 @@ import AttendanceModal from '../components/AttendanceModal';
 import { useData } from '../context/DataContext';
 import { Client, Session } from '../types';
 import { formatCurrency } from '../utils/format';
+import { validateClient } from '../utils/validation';
 
 const statusDotStyle: Record<string, string> = {
     'On Track': 'bg-emerald-500 ring-2 ring-emerald-500/20',
@@ -42,26 +43,38 @@ const ClientsPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [status, setStatus] = useState<'On Track' | 'At Risk' | 'New'>('New');
+    const [formError, setFormError] = useState<string | null>(null);
 
     const resetForm = () => {
         setName('');
         setEmail('');
         setPhone('');
         setStatus('New');
+        setFormError(null);
         setShowForm(false);
         setEditingClient(null);
     };
 
     const handleAdd = () => {
-        const trimmedName = name.trim();
-        if (!trimmedName) return;
-        const newClient = addClient(trimmedName, email, phone, status);
+        setFormError(null);
+        const errors = validateClient({ name, email, phone });
+        if (errors.length > 0) {
+            setFormError(errors[0]);
+            return;
+        }
+        const newClient = addClient(name.trim(), email.trim() || undefined, phone.trim() || undefined, status);
         resetForm();
         navigate(`/clients/${newClient.id}/goals`);
     };
 
     const handleUpdate = () => {
-        if (!editingClient || !name.trim()) return;
+        if (!editingClient) return;
+        setFormError(null);
+        const errors = validateClient({ name, email, phone });
+        if (errors.length > 0) {
+            setFormError(errors[0]);
+            return;
+        }
         updateClient(editingClient.id, {
             name: name.trim(),
             email: email.trim() || undefined,
@@ -78,6 +91,7 @@ const ClientsPage: React.FC = () => {
         setEmail(client.email || '');
         setPhone(client.phone || '');
         setStatus(client.status);
+        setFormError(null);
         setShowForm(true);
         setSelectedDetailClient(null);
     };
@@ -155,8 +169,14 @@ const ClientsPage: React.FC = () => {
                         <h3 className="font-display text-base tracking-wide text-ink">
                             {editingClient ? 'EDIT CLIENT DETAILS' : 'CREATE NEW CLIENT'}
                         </h3>
-                        <span className="text-xs text-text-muted font-bold">Required fields marked *</span>
+                        <span className="text-xs text-text-muted font-bold">Required: Name + Email or Phone</span>
                     </div>
+
+                    {formError && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl">
+                            {formError}
+                        </div>
+                    )}
 
                     <div className="space-y-3">
                         <div>

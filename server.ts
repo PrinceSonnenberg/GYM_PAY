@@ -6,6 +6,7 @@ import { clients, invoices, expenses, sessions, goals, settings, users } from ".
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { eq, and } from "drizzle-orm";
+import { validateClient, validateInvoice } from "./utils/validation.ts";
 
 async function startServer() {
   const app = express();
@@ -35,6 +36,12 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
+      
+      const clientErrors = validateClient(req.body);
+      if (clientErrors.length > 0) {
+        return res.status(400).json({ error: clientErrors[0], errors: clientErrors });
+      }
+
       const newClient = { ...req.body, userId: uid };
       const result = await db.insert(clients).values(newClient).returning();
       res.json(result[0]);
@@ -48,6 +55,12 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       const { id } = req.params;
+
+      const clientErrors = validateClient(req.body);
+      if (clientErrors.length > 0) {
+        return res.status(400).json({ error: clientErrors[0], errors: clientErrors });
+      }
+
       const result = await db
         .update(clients)
         .set(req.body)
@@ -87,6 +100,23 @@ async function startServer() {
   app.post("/api/invoices", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
+
+      const invoiceErrors = validateInvoice(req.body);
+      if (invoiceErrors.length > 0) {
+        return res.status(400).json({ error: invoiceErrors[0], errors: invoiceErrors });
+      }
+
+      // Verify client ownership
+      if (req.body.clientId) {
+        const clientMatch = await db
+          .select()
+          .from(clients)
+          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+        if (clientMatch.length === 0) {
+          return res.status(400).json({ error: "Referenced client does not belong to the current user." });
+        }
+      }
+
       const newInvoice = { ...req.body, userId: uid };
       const result = await db.insert(invoices).values(newInvoice).returning();
       res.json(result[0]);
@@ -100,6 +130,22 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       const { id } = req.params;
+
+      const invoiceErrors = validateInvoice(req.body);
+      if (invoiceErrors.length > 0) {
+        return res.status(400).json({ error: invoiceErrors[0], errors: invoiceErrors });
+      }
+
+      if (req.body.clientId) {
+        const clientMatch = await db
+          .select()
+          .from(clients)
+          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+        if (clientMatch.length === 0) {
+          return res.status(400).json({ error: "Referenced client does not belong to the current user." });
+        }
+      }
+
       const result = await db
         .update(invoices)
         .set(req.body)

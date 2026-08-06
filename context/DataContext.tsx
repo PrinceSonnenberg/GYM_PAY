@@ -293,7 +293,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addServicePreset = (service: Omit<ServicePreset, 'id'>): ServicePreset => {
-        const newPreset: ServicePreset = { ...service, id: `srv-${Date.now()}` };
+        const newPreset: ServicePreset = { ...service, id: crypto.randomUUID() };
         setServices(prev => [...prev, newPreset]);
         return newPreset;
     };
@@ -308,7 +308,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const addClient = (name: string, email?: string, phone?: string, status: 'On Track' | 'At Risk' | 'New' = 'New'): Client => {
         const client: Client = {
-            id: `c${Date.now()}`,
+            id: crypto.randomUUID(),
             name: name.trim(),
             email: email?.trim() || undefined,
             phone: phone?.trim() || undefined,
@@ -339,7 +339,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addInvoice = (invoice: Omit<Invoice, 'id' | 'status'>): Invoice => {
-        const newInv: Invoice = { ...invoice, id: `inv${Date.now()}`, status: 'sent' };
+        const newInv: Invoice = { ...invoice, id: crypto.randomUUID(), status: 'sent' };
         setInvoices(prev => [newInv, ...prev]);
         apiFetch('/api/invoices', {
             method: 'POST',
@@ -377,11 +377,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addExpense: DataContextType['addExpense'] = (expense) => {
-        setExpenses(prev => [{ ...expense, id: `e${Date.now()}` }, ...prev]);
+        setExpenses(prev => [{ ...expense, id: crypto.randomUUID() }, ...prev]);
     };
 
     const addGoal: DataContextType['addGoal'] = (goal) => {
-        const newGoal = { ...goal, id: `g${Date.now()}` };
+        const newGoal = { ...goal, id: crypto.randomUUID() };
         setGoals(prev => [...prev, newGoal]);
         apiFetch('/api/goals', {
             method: 'POST',
@@ -405,7 +405,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addSession: DataContextType['addSession'] = (session) => {
-        setSessions(prev => [...prev, { ...session, id: `s${Date.now()}`, status: session.status || 'scheduled' }]);
+        setSessions(prev => [...prev, { ...session, id: crypto.randomUUID(), status: session.status || 'scheduled' }]);
     };
 
     const updateSessionStatus = (id: string, status: SessionAttendanceStatus, notes?: string) => {

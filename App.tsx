@@ -23,9 +23,6 @@ const App: React.FC = () => {
     if (location.pathname === '/invoices') {
         return <InvoicesPage />;
     }
-    if (location.pathname === '/statistics') {
-        return <StatisticsPage />;
-    }
 
     return (
         <div className="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-background">

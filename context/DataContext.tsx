@@ -200,35 +200,35 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const clientsRes = await apiFetch('/api/clients');
                 if (clientsRes.ok) {
                     const clientsData = await clientsRes.json();
-                    if (clientsData && clientsData.length > 0) setClients(clientsData);
+                    if (clientsData) setClients(clientsData);
                 }
 
                 // Fetch invoices list
                 const invoicesRes = await apiFetch('/api/invoices');
                 if (invoicesRes.ok) {
                     const invoicesData = await invoicesRes.json();
-                    if (invoicesData && invoicesData.length > 0) setInvoices(invoicesData);
+                    if (invoicesData) setInvoices(invoicesData);
                 }
 
                 // Fetch client goals
                 const goalsRes = await apiFetch('/api/goals');
                 if (goalsRes.ok) {
                     const goalsData = await goalsRes.json();
-                    if (goalsData && goalsData.length > 0) setGoals(goalsData);
+                    if (goalsData) setGoals(goalsData);
                 }
 
                 // Fetch expenses list
                 const expensesRes = await apiFetch('/api/expenses');
                 if (expensesRes.ok) {
                     const expensesData = await expensesRes.json();
-                    if (expensesData && expensesData.length > 0) setExpenses(expensesData);
+                    if (expensesData) setExpenses(expensesData);
                 }
 
                 // Fetch calendar training sessions
                 const sessionsRes = await apiFetch('/api/sessions');
                 if (sessionsRes.ok) {
                     const sessionsData = await sessionsRes.json();
-                    if (sessionsData && sessionsData.length > 0) setSessions(sessionsData);
+                    if (sessionsData) setSessions(sessionsData);
                 }
             } catch (err) {
                 console.error('Error loading initial data from DB:', err);

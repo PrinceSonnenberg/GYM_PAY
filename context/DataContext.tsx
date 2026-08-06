@@ -138,14 +138,31 @@ const seedSessions: Session[] = [
     { id: 's5', clientId: 'c2', date: isoOffset(5), time: '04:00 PM', sessionType: 'Nutrition Check-in', format: 'video', status: 'scheduled' },
 ];
 
+const loadLocal = <T,>(key: string, fallback: T): T => {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+    } catch {
+        return fallback;
+    }
+};
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [clients, setClients] = useState<Client[]>(seedClients);
-    const [invoices, setInvoices] = useState<Invoice[]>(seedInvoices);
-    const [expenses, setExpenses] = useState<ExpenseItem[]>(seedExpenses);
-    const [goals, setGoals] = useState<ActiveGoal[]>(seedGoals);
-    const [sessions, setSessions] = useState<Session[]>(seedSessions);
-    const [services, setServices] = useState<ServicePreset[]>(DEFAULT_SERVICES);
-    const [settings, setSettings] = useState<UserSettings>(defaultUserSettings);
+    const [clients, setClients] = useState<Client[]>(() => loadLocal('app_clients', seedClients));
+    const [invoices, setInvoices] = useState<Invoice[]>(() => loadLocal('app_invoices', seedInvoices));
+    const [expenses, setExpenses] = useState<ExpenseItem[]>(() => loadLocal('app_expenses', seedExpenses));
+    const [goals, setGoals] = useState<ActiveGoal[]>(() => loadLocal('app_goals', seedGoals));
+    const [sessions, setSessions] = useState<Session[]>(() => loadLocal('app_sessions', seedSessions));
+    const [services, setServices] = useState<ServicePreset[]>(() => loadLocal('app_services', DEFAULT_SERVICES));
+    const [settings, setSettings] = useState<UserSettings>(() => loadLocal('app_settings', defaultUserSettings));
+
+    useEffect(() => localStorage.setItem('app_clients', JSON.stringify(clients)), [clients]);
+    useEffect(() => localStorage.setItem('app_invoices', JSON.stringify(invoices)), [invoices]);
+    useEffect(() => localStorage.setItem('app_expenses', JSON.stringify(expenses)), [expenses]);
+    useEffect(() => localStorage.setItem('app_goals', JSON.stringify(goals)), [goals]);
+    useEffect(() => localStorage.setItem('app_sessions', JSON.stringify(sessions)), [sessions]);
+    useEffect(() => localStorage.setItem('app_services', JSON.stringify(services)), [services]);
+    useEffect(() => localStorage.setItem('app_settings', JSON.stringify(settings)), [settings]);
 
     
     /**

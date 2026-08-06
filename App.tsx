@@ -8,12 +8,13 @@ import ExpensesPage from './pages/ExpensesPage';
 import ClientsPage from './pages/ClientsPage';
 import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
+import StatisticsPage from './pages/StatisticsPage';
 import BottomNav from './components/BottomNav';
 
 const App: React.FC = () => {
     const location = useLocation();
 
-    const showBottomNav = ['/', '/clients', '/calendar', '/settings', '/invoices'].includes(location.pathname);
+    const showBottomNav = ['/', '/clients', '/calendar', '/settings', '/invoices', '/statistics'].includes(location.pathname);
 
     // Expenses & Invoices manage their layout cleanly
     if (location.pathname === '/expenses') {
@@ -21,6 +22,9 @@ const App: React.FC = () => {
     }
     if (location.pathname === '/invoices') {
         return <InvoicesPage />;
+    }
+    if (location.pathname === '/statistics') {
+        return <StatisticsPage />;
     }
 
     return (
@@ -34,6 +38,7 @@ const App: React.FC = () => {
                 <Route path="/invoice/:clientId" element={<NewInvoicePage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/statistics" element={<StatisticsPage />} />
                 <Route path="*" element={<HomePage />} />
             </Routes>
             {showBottomNav && <BottomNav />}
@@ -42,3 +47,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

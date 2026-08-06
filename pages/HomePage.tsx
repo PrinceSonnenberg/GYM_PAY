@@ -203,7 +203,12 @@ const HomePage: React.FC = () => {
                 <section className="plate bg-surface p-6 border-2 border-ink">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
-                            <h3 className="font-display text-lg tracking-wide">INCOME TREND</h3>
+                            <h3 className="font-display text-lg tracking-wide flex items-center gap-2">
+                                INCOME TREND
+                                <button onClick={() => navigate('/statistics')} className="text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary-hover bg-primary/10 px-2 py-0.5 rounded-full transition-colors ml-2 flex items-center gap-1">
+                                    Full Stats <Icon name="chevron_right" className="text-[12px]" />
+                                </button>
+                            </h3>
                             <p className="text-xs font-bold text-text-muted">{formatCurrency(trendData.total)} total in period</p>
                         </div>
                         <div className="relative">

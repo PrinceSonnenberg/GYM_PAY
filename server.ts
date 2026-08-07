@@ -348,8 +348,8 @@ async function startServer() {
       ];
 
       const newExpenses = [
-        { id: crypto.randomUUID(), userId: uid, date: new Date().toISOString().slice(0, 10), amount: 50, category: "Software", description: "Gym Management App" },
-        { id: crypto.randomUUID(), userId: uid, date: new Date(Date.now() - 86400000 * 2).toISOString().slice(0, 10), amount: 120, category: "Equipment", description: "New Weights" }
+        { id: crypto.randomUUID(), userId: uid, date: new Date().toISOString().slice(0, 10), amount: 50, category: "Software", name: "Gym Management App", icon: "laptop_mac", iconBg: "bg-blue-100", iconColor: "text-blue-600" },
+        { id: crypto.randomUUID(), userId: uid, date: new Date(Date.now() - 86400000 * 2).toISOString().slice(0, 10), amount: 120, category: "Equipment", name: "New Weights", icon: "fitness_center", iconBg: "bg-orange-100", iconColor: "text-orange-600" }
       ];
 
       const newSessions = [

@@ -4,7 +4,6 @@ import { createServer as createViteServer } from "vite";
 import { db } from "./src/db/index.ts";
 import { clients, invoices, expenses, sessions, goals, settings, users } from "./src/db/schema.ts";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
-import { getOrCreateUser } from "./src/db/users.ts";
 import { eq, and } from "drizzle-orm";
 import { validateClient, validateInvoice } from "./utils/validation.ts";
 
@@ -23,7 +22,6 @@ async function startServer() {
   app.get("/api/clients", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
       const result = await db.select().from(clients).where(eq(clients.userId, uid));
       res.json(result);
     } catch (error: any) {
@@ -35,7 +33,6 @@ async function startServer() {
   app.post("/api/clients", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
       
       const clientErrors = validateClient(req.body);
       if (clientErrors.length > 0) {
@@ -302,7 +299,6 @@ async function startServer() {
   app.get("/api/settings", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
       const result = await db.select().from(settings).where(eq(settings.userId, uid));
       res.json(result[0]?.data || null);
     } catch (error: any) {
@@ -314,7 +310,6 @@ async function startServer() {
   app.post("/api/settings", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      await getOrCreateUser(uid, req.user?.email || "coach@gympayfit.com");
       const result = await db
         .insert(settings)
         .values({ userId: uid, data: req.body })
@@ -326,6 +321,49 @@ async function startServer() {
       res.json(result[0]?.data);
     } catch (error: any) {
       console.error("Error updating settings:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Dev Seed API
+  app.post("/api/dev/seed", requireAuth, async (req: AuthRequest, res) => {
+    if (process.env.ALLOW_DEV_SEED !== "true") {
+      return res.status(403).json({ error: "Seed endpoint disabled." });
+    }
+
+    try {
+      const uid = req.user?.uid || "default-user";
+      
+      const c1Id = crypto.randomUUID();
+      const c2Id = crypto.randomUUID();
+
+      const newClients = [
+        { id: c1Id, userId: uid, name: "Alice Johnson", email: "alice@example.com", phone: "555-0100", status: "On Track" },
+        { id: c2Id, userId: uid, name: "Bob Smith", email: "bob@example.com", phone: "555-0200", status: "New" }
+      ];
+      
+      const newInvoices = [
+        { id: crypto.randomUUID(), userId: uid, clientId: c1Id, clientName: "Alice Johnson", items: [{ description: "Monthly Training", quantity: 1, rate: 200 }], taxRate: 0.05, status: "paid", dueDate: new Date().toISOString().slice(0, 10), issuedDate: new Date(Date.now() - 86400000 * 5).toISOString().slice(0, 10), notes: "" },
+        { id: crypto.randomUUID(), userId: uid, clientId: c2Id, clientName: "Bob Smith", items: [{ description: "Nutrition Plan", quantity: 1, rate: 100 }], taxRate: 0.05, status: "sent", dueDate: new Date(Date.now() - 86400000).toISOString().slice(0, 10), issuedDate: new Date(Date.now() - 86400000 * 30).toISOString().slice(0, 10), notes: "" }
+      ];
+
+      const newExpenses = [
+        { id: crypto.randomUUID(), userId: uid, date: new Date().toISOString().slice(0, 10), amount: 50, category: "Software", description: "Gym Management App" },
+        { id: crypto.randomUUID(), userId: uid, date: new Date(Date.now() - 86400000 * 2).toISOString().slice(0, 10), amount: 120, category: "Equipment", description: "New Weights" }
+      ];
+
+      const newSessions = [
+        { id: crypto.randomUUID(), userId: uid, clientId: c1Id, date: new Date().toISOString().slice(0, 10), time: "10:00 AM", sessionType: "Strength Training", format: "in-person", status: "scheduled" }
+      ];
+
+      await db.insert(clients).values(newClients);
+      await db.insert(invoices).values(newInvoices);
+      await db.insert(expenses).values(newExpenses);
+      await db.insert(sessions).values(newSessions);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error seeding data:", error);
       res.status(500).json({ error: error.message });
     }
   });

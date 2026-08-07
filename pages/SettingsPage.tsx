@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import Icon from '../components/Icon';
 import BottomNav from '../components/BottomNav';
 import { useData } from '../context/DataContext';
+import { apiFetch } from '../utils/api';
+
+import { auth } from '../src/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 type ModalType = 'theme' | 'home' | 'profile' | 'payout' | 'notifications' | 'invoiceDefaults' | 'taxRate' | 'services' | 'exportData' | 'logout' | null;
+
 
 const SettingsPage: React.FC = () => {
     const { updateHomePreferences, settings, services, addServicePreset, updateServicePreset, deleteServicePreset, updateProfile, updatePayout, updateNotifications, updateUiTheme, updateInvoiceDefaults, resetAllData, clients, invoices, expenses } = useData();
@@ -346,13 +351,50 @@ const SettingsPage: React.FC = () => {
                                 <Icon name="restart_alt" className="text-[20px]" />
                             </div>
                             <div className="flex-1">
-                                <span className="block font-bold text-sm text-danger">Reset Sample Data</span>
-                                <span className="block text-xs text-text-muted">Restore default demo dataset</span>
+                                <span className="block font-bold text-sm text-danger">Reset Local Sample Data</span>
+                                <span className="block text-xs text-text-muted">Restore default demo dataset locally</span>
                             </div>
                             <Icon name="chevron_right" className="text-text-muted" />
                         </button>
                     </div>
                 </div>
+
+                {/* Developer Options */}
+                {import.meta.env.VITE_ALLOW_DEV_SEED === 'true' && (
+                    <div>
+                        <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest px-1 mb-2">Developer Options</h3>
+                        <div className="rounded-2xl bg-white border-2 border-ink overflow-hidden shadow-sm">
+                            <button
+                                onClick={async () => {
+                                    if (confirm('Load database sample data? This will add seed records.')) {
+                                        try {
+                                            const res = await apiFetch('/api/dev/seed', { method: 'POST' });
+                                            if (res.ok) {
+                                                triggerToast('Sample data seeded successfully. Refreshing...');
+                                                setTimeout(() => window.location.reload(), 1500);
+                                            } else {
+                                                triggerToast('Failed to seed data');
+                                            }
+                                        } catch (e) {
+                                            console.error(e);
+                                            triggerToast('Error seeding data');
+                                        }
+                                    }
+                                }}
+                                className="flex w-full items-center gap-4 p-4 text-left hover:bg-background/60 transition-colors"
+                            >
+                                <div className="flex size-10 items-center justify-center rounded-full bg-volt text-ink">
+                                    <Icon name="data_object" className="text-[20px]" />
+                                </div>
+                                <div className="flex-1">
+                                    <span className="block font-bold text-sm text-ink">Load DB Sample Data</span>
+                                    <span className="block text-xs text-text-muted">Populate DB with sample clients & invoices</span>
+                                </div>
+                                <Icon name="chevron_right" className="text-text-muted" />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Logout Button */}
                 <button
@@ -1061,9 +1103,13 @@ const SettingsPage: React.FC = () => {
                         </p>
                         <div className="flex gap-2 pt-2">
                             <button
-                                onClick={() => {
-                                    setActiveModal(null);
-                                    triggerToast('Logged out session');
+                                onClick={async () => {
+                                    try {
+                                        await signOut(auth);
+                                        setActiveModal(null);
+                                    } catch (e) {
+                                        console.error('Logout error:', e);
+                                    }
                                 }}
                                 className="flex-1 rounded-xl bg-danger text-white font-bold uppercase text-xs tracking-wide py-3 hover:bg-danger/90 transition-colors shadow-sm"
                             >

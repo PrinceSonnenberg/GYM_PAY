@@ -2,11 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
+import PageHeader from '../components/PageHeader';
+import Modal from '../components/Modal';
 import { useData } from '../context/DataContext';
 import { InvoiceItem, Invoice } from '../types';
 import { formatCurrency, invoiceSubtotal } from '../utils/format';
 import { downloadInvoicePdf } from '../utils/pdf';
 import { validateClient, validateInvoice } from '../utils/validation';
+import { AddClientModal, InvoiceSuccessModal, InvoicePDFModal } from '../components/invoices';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const plusDaysISO = (days: number) => {
@@ -192,358 +195,50 @@ const NewInvoicePage: React.FC = () => {
 
     return (
         <div className="relative flex flex-col min-h-screen w-full max-w-md mx-auto overflow-hidden bg-background font-inter text-text-main">
-            <header className="flex items-center justify-between px-5 py-4 sticky top-0 z-30 bg-ink">
-                <button onClick={() => navigate(-1)} className="flex items-center justify-center size-10 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white">
-                    <Icon name="close" style={{ fontSize: '24px' }} />
-                </button>
-                <h2 className="font-display text-lg tracking-wide text-white">CREATE INVOICE</h2>
-                <button
-                    onClick={handleSend}
-                    className="flex items-center justify-center h-9 px-4 -mr-1 rounded-full bg-volt hover:bg-volt/80 transition-colors"
-                >
-                    <span className="text-ink text-sm font-bold uppercase tracking-wide">Save</span>
-                </button>
-            </header>
+            <PageHeader
+                title="CREATE INVOICE"
+                centered
+                onBack={() => navigate(-1)}
+                rightAction={
+                    <button
+                        onClick={handleSend}
+                        className="flex items-center justify-center h-9 px-4 rounded-full bg-volt hover:bg-volt/80 transition-colors"
+                    >
+                        <span className="text-ink text-sm font-bold uppercase tracking-wide">Save</span>
+                    </button>
+                }
+            />
 
             {/* Success Invoice Modal / Sheet */}
-            {createdInvoice && (
-                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink overflow-hidden shadow-2xl animate-fadeIn flex flex-col max-h-[90vh]">
-                        <div className="bg-signal p-6 text-center text-white border-b-2 border-ink">
-                            <div className="inline-flex size-14 items-center justify-center rounded-full bg-white text-signal mb-3 shadow-md">
-                                <Icon name="check_circle" className="text-3xl" />
-                            </div>
-                            <h3 className="font-display text-2xl tracking-wide">INVOICE CREATED!</h3>
-                            <p className="text-xs font-bold text-white/90 uppercase tracking-widest mt-1">
-                                Invoice #{createdInvoice.id.slice(-6).toUpperCase()}
-                            </p>
-                        </div>
-
-                        <div className="p-5 overflow-visible space-y-4">
-                            <div className="bg-background rounded-2xl p-4 border border-border-light space-y-2 text-xs">
-                                <div className="flex justify-between">
-                                    <span className="text-text-muted uppercase font-bold text-[10px]">Billed To</span>
-                                    <span className="font-bold text-text-main text-sm">{selectedClient?.name || 'Client'}</span>
-                                </div>
-                                {selectedClient?.email && (
-                                    <div className="flex justify-between text-text-muted">
-                                        <span>Email:</span>
-                                        <span className="font-medium text-text-main">{selectedClient.email}</span>
-                                    </div>
-                                )}
-                                {selectedClient?.phone && (
-                                    <div className="flex justify-between text-text-muted">
-                                        <span>Phone:</span>
-                                        <span className="font-mono text-text-main">{selectedClient.phone}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between">
-                                    <span className="text-text-muted uppercase font-bold text-[10px]">Due Date</span>
-                                    <span className="font-bold text-text-main">{createdInvoice.dueDate}</span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Items Breakdown</p>
-                                {createdInvoice.items.map((item) => (
-                                    <div key={item.id} className="flex justify-between items-center text-xs py-1.5 border-b border-border-light last:border-none">
-                                        <div>
-                                            <p className="font-bold">{item.title}</p>
-                                            <p className="text-[10px] text-text-muted">{item.details}</p>
-                                        </div>
-                                        <span className="font-mono font-bold">{formatCurrency(item.amount)}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="bg-ink p-4 rounded-xl text-white flex justify-between items-center">
-                                <span className="font-display text-sm">TOTAL DUE</span>
-                                <span className="font-mono text-volt font-bold text-xl">{formatCurrency(total)}</span>
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-background border-t-2 border-ink space-y-2">
-                            {shareToast && (
-                                <div className="p-2.5 rounded-xl bg-primary text-white text-xs font-bold text-center animate-fadeIn flex items-center justify-center gap-1.5">
-                                    <Icon name="check_circle" className="text-volt" />
-                                    <span>Invoice payment link copied to clipboard!</span>
-                                </div>
-                            )}
-
-                            <button
-                                onClick={() => setShowPdfView(true)}
-                                className="w-full py-3 rounded-full bg-ink text-volt border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-sm"
-                            >
-                                <Icon name="picture_as_pdf" />
-                                <span>Preview & Download PDF</span>
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    markInvoicePaid(createdInvoice.id);
-                                    setCreatedInvoice(prev => prev ? { ...prev, status: 'paid' } : null);
-                                }}
-                                disabled={createdInvoice.status === 'paid'}
-                                className={`w-full py-2.5 rounded-full font-bold uppercase text-xs tracking-wide flex items-center justify-center gap-2 border-2 border-ink ${
-                                    createdInvoice.status === 'paid' ? 'bg-signal-soft text-signal cursor-default' : 'bg-volt text-ink hover:bg-volt/80'
-                                }`}
-                            >
-                                <Icon name={createdInvoice.status === 'paid' ? 'task_alt' : 'payments'} />
-                                <span>{createdInvoice.status === 'paid' ? 'Status: PAID' : 'Mark as Paid'}</span>
-                            </button>
-
-                            <button
-                                onClick={async () => {
-                                    const shareUrl = `${window.location.origin}${window.location.pathname}#/invoices?id=${createdInvoice.id}`;
-                                    if (navigator.share) {
-                                        try {
-                                            await navigator.share({
-                                                title: `Invoice #${createdInvoice.id.slice(-8).toUpperCase()}`,
-                                                text: `Invoice from ${settings.profile.name || 'Trainer'} for ${selectedClient?.name || 'Client'}`,
-                                                url: shareUrl,
-                                            });
-                                        } catch {
-                                            navigator.clipboard.writeText(shareUrl).catch(() => {});
-                                            setShareToast(true);
-                                            setTimeout(() => setShareToast(false), 3000);
-                                        }
-                                    } else {
-                                        navigator.clipboard.writeText(shareUrl).catch(() => {});
-                                        setShareToast(true);
-                                        setTimeout(() => setShareToast(false), 3000);
-                                    }
-                                }}
-                                className="w-full py-2.5 rounded-full bg-white text-ink border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-background transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Icon name="share" />
-                                <span>Share Invoice Link</span>
-                            </button>
-
-                            <button
-                                onClick={() => navigate('/invoices')}
-                                className="w-full py-2.5 text-text-muted font-bold uppercase text-xs tracking-wide hover:text-ink transition-colors text-center"
-                            >
-                                View All Invoices
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* PDF Printable Invoice Modal */}
-            {showPdfView && createdInvoice && (
-                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 overflow-visible">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border-2 border-ink shadow-2xl overflow-hidden my-auto flex flex-col max-h-[95vh]">
-                        {/* Header */}
-                        <div className="bg-ink p-4 text-white flex justify-between items-center border-b-2 border-ink shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Icon name="picture_as_pdf" className="text-volt text-2xl" />
-                                <div>
-                                    <h3 className="font-display text-base tracking-wide">OFFICIAL INVOICE PDF</h3>
-                                    <p className="text-[10px] text-white/60">Ready for Download & Printing</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => downloadInvoicePdf('printable-invoice', `Invoice_${createdInvoice.id.slice(-8)}`)}
-                                    className="px-3.5 py-2 rounded-full bg-volt text-ink font-bold uppercase text-xs flex items-center gap-1.5 hover:bg-volt/80 transition-all shadow-sm active:scale-95"
-                                >
-                                    <Icon name="download" className="text-[16px]" />
-                                    <span>Download PDF</span>
-                                </button>
-                                <button
-                                    onClick={() => window.print()}
-                                    className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all"
-                                    title="Print Document"
-                                >
-                                    <Icon name="print" className="text-[18px]" />
-                                </button>
-                                <button
-                                    onClick={() => setShowPdfView(false)}
-                                    className="text-white/70 hover:text-white p-1"
-                                >
-                                    <Icon name="close" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Printable Body */}
-                        <div className="p-8 overflow-visible text-ink font-inter bg-white" id="printable-invoice">
-                            <div className="flex justify-between items-start border-b-2 border-ink pb-6 mb-6">
-                                <div className="mb-4">
-                                    {settings.profile.logoUrl ? (
-                                        <img src={settings.profile.logoUrl} alt="Business Logo" className="h-14 max-w-xs object-contain mb-2" />
-                                    ) : (
-                                        <div className="size-12 rounded-2xl bg-ink text-volt font-display text-2xl flex items-center justify-center border-2 border-ink mb-2">
-                                            {settings.profile.name.charAt(0)}
-                                        </div>
-                                    )}
-                                    <div>
-                                        <h2 className="font-display text-xl tracking-wide uppercase">{settings.profile.name || 'Alex Sonnenberg'}</h2>
-                                        <p className="text-xs font-bold text-primary">{settings.profile.title || 'Strength & Conditioning Coach'}</p>
-                                        <p className="text-xs text-text-muted">{settings.profile.email} • {settings.profile.phone}</p>
-                                    </div>
-                                </div>
-
-                                <div className="text-right">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 ${
-                                        createdInvoice.status === 'paid' ? 'bg-signal text-white' : 'bg-danger text-white'
-                                    }`}>
-                                        INVOICE: {createdInvoice.status.toUpperCase()}
-                                    </span>
-                                    <p className="font-mono text-sm font-bold text-ink">#{createdInvoice.id.slice(-8).toUpperCase()}</p>
-                                    <p className="text-xs text-text-muted">Issued: <strong>{createdInvoice.issuedDate}</strong></p>
-                                    <p className="text-xs text-text-muted">Due Date: <strong>{createdInvoice.dueDate}</strong></p>
-                                </div>
-                            </div>
-
-                            <div className="p-4 rounded-2xl bg-background border border-border-light flex justify-between items-center mb-6">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Billed Client</p>
-                                    <h4 className="font-bold text-base">{selectedClient?.name || 'Valued Client'}</h4>
-                                    <p className="text-xs text-text-muted">{selectedClient?.email || 'Client Email N/A'}</p>
-                                    {selectedClient?.phone && (
-                                        <p className="text-xs text-text-muted mt-1">{selectedClient.phone}</p>
-                                    )}
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Payment Term</p>
-                                    <p className="text-xs font-bold text-ink">Net 14 Days</p>
-                                </div>
-                            </div>
-
-                            <div className="mb-6">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Itemized Services & Credits</p>
-                                <table className="w-full border-collapse text-xs">
-                                    <thead>
-                                        <tr className="border-b-2 border-ink bg-background text-left">
-                                            <th className="py-2.5 px-3 font-bold uppercase">Description</th>
-                                            <th className="py-2.5 px-3 font-bold uppercase text-center">Sessions</th>
-                                            <th className="py-2.5 px-3 font-bold uppercase text-right">Rate</th>
-                                            <th className="py-2.5 px-3 font-bold uppercase text-right">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {createdInvoice.items.map((item) => (
-                                            <tr key={item.id} className="border-b border-border-light">
-                                                <td className="py-3 px-3">
-                                                    <p className="font-bold text-ink">{item.title}</p>
-                                                    <p className="text-[10px] text-text-muted mt-1">{item.details}</p>
-                                                </td>
-                                                <td className="py-3 px-3 text-center font-mono">{item.sessions || '-'}</td>
-                                                <td className="py-3 px-3 text-right font-mono">{item.rate ? formatCurrency(item.rate, currency) : '-'}</td>
-                                                <td className={`py-3 px-3 text-right font-mono font-bold ${item.amount < 0 ? 'text-emerald-700' : 'text-ink'}`}>
-                                                    {formatCurrency(item.amount, currency)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className="flex justify-end pt-2 mb-6">
-                                <div className="w-64 text-xs">
-                                    <div className="flex justify-between text-text-muted font-medium mb-2">
-                                        <span>Subtotal:</span>
-                                        <span className="font-mono">{formatCurrency(invoiceSubtotal(createdInvoice.items), currency)}</span>
-                                    </div>
-                                    {createdInvoice.taxRate > 0 && (
-                                        <div className="flex justify-between text-text-muted font-medium mb-2">
-                                            <span>Tax ({(createdInvoice.taxRate * 100).toFixed(0)}%):</span>
-                                            <span className="font-mono">{formatCurrency(invoiceSubtotal(createdInvoice.items) * createdInvoice.taxRate, currency)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between items-center pt-2 mt-2 border-t-2 border-ink font-bold text-sm text-ink">
-                                        <span>Total Balance Due:</span>
-                                        <span className="font-mono text-base font-extrabold text-primary">{formatCurrency(total, currency)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-4 rounded-2xl bg-ink text-white text-xs">
-                                <p className="text-[10px] font-bold uppercase text-volt tracking-widest mb-1">Payment Instructions</p>
-                                <p className="text-white/80 mb-1">Please transfer payment to <strong>{settings.profile.name}</strong> via <strong>{settings.payout.method}</strong>.</p>
-                                {settings.payout.accountNumberLast4 && <p className="text-white/80 mb-1">Account ending in: •••• {settings.payout.accountNumberLast4}</p>}
-                                {settings.payout.routingNumber && <p className="text-white/80 mb-1">Routing: {settings.payout.routingNumber}</p>}
-                                <p className="text-[10px] text-white/50 pt-2">Thank you for training with us!</p>
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-background border-t-2 border-ink">
-                            <button
-                                onClick={() => setShowPdfView(false)}
-                                className="w-full py-3 rounded-full bg-ink text-white font-bold uppercase text-xs tracking-wide hover:bg-black transition-colors"
-                            >
-                                Close PDF Preview
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Inline Add Client Modal */}
-            {showAddClientModal && (
-                <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink p-6 space-y-4 shadow-2xl animate-fadeIn">
-                        <div className="flex items-center justify-between border-b pb-3 border-border-light">
-                            <h3 className="font-display text-lg tracking-wide text-ink">ADD NEW CLIENT</h3>
-                            <button onClick={() => setShowAddClientModal(false)} className="text-text-muted hover:text-ink">
-                                <Icon name="close" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Client Name *</label>
-                                <input
-                                    autoFocus
-                                    value={newClientName}
-                                    onChange={e => setNewClientName(e.target.value)}
-                                    placeholder="e.g. Alex Morgan"
-                                    className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    value={newClientEmail}
-                                    onChange={e => setNewClientEmail(e.target.value)}
-                                    placeholder="alex@example.com"
-                                    className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Phone Number</label>
-                                <input
-                                    type="tel"
-                                    value={newClientPhone}
-                                    onChange={e => setNewClientPhone(e.target.value)}
-                                    placeholder="(555) 123-4567"
-                                    className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-2 pt-2">
-                            <button
-                                onClick={handleCreateClient}
-                                disabled={!newClientName.trim()}
-                                className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wide py-3 hover:bg-primary-hover transition-colors disabled:opacity-40"
-                            >
-                                Save Client
-                            </button>
-                            <button
-                                onClick={() => setShowAddClientModal(false)}
-                                className="rounded-xl border-2 border-ink font-bold uppercase text-xs tracking-wide px-4 hover:bg-background transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
+            <InvoiceSuccessModal
+                open={!!createdInvoice}
+                onClose={() => {}}
+                createdInvoice={createdInvoice}
+                setCreatedInvoice={setCreatedInvoice}
+                selectedClient={selectedClient}
+                settings={settings}
+                currency={currency}
+                onViewPdf={() => setShowPdfView(true)}
+            />
+            <InvoicePDFModal
+                open={showPdfView && !!createdInvoice}
+                onClose={() => setShowPdfView(false)}
+                invoice={createdInvoice}
+                client={selectedClient}
+                settings={settings}
+                currency={currency}
+            />
+            <AddClientModal
+                open={showAddClientModal}
+                onClose={() => setShowAddClientModal(false)}
+                newClientName={newClientName}
+                setNewClientName={setNewClientName}
+                newClientEmail={newClientEmail}
+                setNewClientEmail={setNewClientEmail}
+                newClientPhone={newClientPhone}
+                setNewClientPhone={setNewClientPhone}
+                handleCreateClient={handleCreateClient}
+            />
             <main className="flex-1 overflow-visible pb-24">
                 {errorMessage && (
                     <div className="mx-5 mt-4 p-3 rounded-xl bg-danger-soft border-2 border-danger text-danger text-xs font-bold flex items-center justify-between">

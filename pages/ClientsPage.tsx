@@ -5,6 +5,9 @@ import Icon from '../components/Icon';
 import AttendanceBadge from '../components/AttendanceBadge';
 import AttendanceModal from '../components/AttendanceModal';
 import { useData } from '../context/DataContext';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import Modal from '../components/Modal';
 import { Client, Session } from '../types';
 import { formatCurrency } from '../utils/format';
 import { validateClient } from '../utils/validation';
@@ -134,12 +137,10 @@ const ClientsPage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-background font-inter text-text-main">
-            <header className="sticky top-0 z-30 flex flex-col bg-ink px-5 py-5 gap-3">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Roster</p>
-                        <h1 className="font-display text-2xl text-white tracking-wide">CLIENTS ({clients.length})</h1>
-                    </div>
+            <PageHeader
+                title={`CLIENTS (${clients.length})`}
+                eyebrow="Roster"
+                rightAction={
                     <button
                         onClick={() => {
                             if (showForm) {
@@ -153,8 +154,8 @@ const ClientsPage: React.FC = () => {
                     >
                         <Icon name={showForm ? 'close' : 'person_add'} className="text-[22px]" />
                     </button>
-                </div>
-
+                }
+            >
                 {clients.length > 0 && !showForm && (
                     <div className="relative">
                         <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 text-[18px]" />
@@ -172,7 +173,7 @@ const ClientsPage: React.FC = () => {
                         )}
                     </div>
                 )}
-            </header>
+            </PageHeader>
 
             {/* Add / Edit Form Modal */}
             {showForm && (
@@ -258,16 +259,13 @@ const ClientsPage: React.FC = () => {
             )}
 
             {clients.length === 0 ? (
-                <main className="flex flex-1 flex-col items-center justify-center text-center p-8 pb-28">
-                    <div className="plate flex size-24 items-center justify-center bg-ink text-volt mb-6 border-2 border-ink">
-                        <Icon name="groups" className="text-5xl" />
-                    </div>
-                    <h2 className="font-display text-xl tracking-wide text-text-main">NO CLIENT ROSTER YET</h2>
-                    <p className="text-text-muted mt-2 max-w-xs text-sm">Add your first client to manage goals and invoices cleanly.</p>
-                    <button onClick={() => setShowForm(true)} className="mt-6 flex items-center gap-2 rounded-full bg-primary text-white border-2 border-ink px-6 py-3 font-bold uppercase text-sm tracking-wide shadow-pop transition-all active:translate-y-1.5 active:shadow-none">
-                        <Icon name="person_add" className="text-[20px]" />
-                        Add a Client
-                    </button>
+                <main className="flex-1">
+                    <EmptyState
+                        icon="groups"
+                        title="NO CLIENT ROSTER YET"
+                        description="Add your first client to manage goals and invoices cleanly."
+                        action={{ label: "Add a Client", icon: "person_add", onClick: () => setShowForm(true) }}
+                    />
                 </main>
             ) : (
                 <main className="flex-1 p-5 pb-28 space-y-3">
@@ -362,9 +360,9 @@ const ClientsPage: React.FC = () => {
             )}
 
             {/* Client Detail Modal */}
-            {selectedDetailClient && (
-                <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink p-5 space-y-4 shadow-2xl animate-fadeIn">
+            <Modal open={!!selectedDetailClient} onClose={() => setSelectedDetailClient(null)}>
+                {selectedDetailClient && (
+                    <div className="p-5 space-y-4">
                         <div className="flex items-center justify-between border-b pb-3 border-border-light">
                             <div className="flex items-center gap-3">
                                 <div className="flex size-12 items-center justify-center rounded-2xl bg-ink text-volt font-display text-xl font-bold">
@@ -555,8 +553,8 @@ const ClientsPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
 
             {/* Attendance Modal */}
             <AttendanceModal

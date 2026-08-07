@@ -5,6 +5,8 @@ import Icon from '../components/Icon';
 import AttendanceBadge from '../components/AttendanceBadge';
 import AttendanceModal from '../components/AttendanceModal';
 import { useData } from '../context/DataContext';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
 import { Session } from '../types';
 
 const toISO = (d: Date) => d.toISOString().slice(0, 10);
@@ -55,9 +57,9 @@ const CalendarPage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
-            <header className="sticky top-0 z-30 bg-ink px-5 py-5">
-                <div className="flex items-center justify-between">
-                    <h1 className="font-display text-2xl text-white tracking-wide">CALENDAR</h1>
+            <PageHeader
+                title="CALENDAR"
+                rightAction={
                     <button
                         onClick={() => setShowForm(v => !v)}
                         aria-label="Book a session"
@@ -66,7 +68,8 @@ const CalendarPage: React.FC = () => {
                     >
                         <Icon name={showForm ? 'close' : 'add'} className="text-[20px]" />
                     </button>
-                </div>
+                }
+            >
                 <p className="text-white/50 text-xs font-bold uppercase tracking-widest mt-3">{monthYearLabel(new Date(selectedDate + 'T00:00:00'))}</p>
                 <div className="flex justify-between mt-3 gap-1">
                     {weekDays.map(d => {
@@ -85,7 +88,7 @@ const CalendarPage: React.FC = () => {
                         );
                     })}
                 </div>
-            </header>
+            </PageHeader>
 
             {showForm && (
                 <div className="p-5 bg-white border-b-2 border-ink space-y-3">
@@ -142,15 +145,12 @@ const CalendarPage: React.FC = () => {
                 </div>
 
                 {sessions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center py-16">
-                        <div className="plate flex size-20 items-center justify-center bg-primary text-white mb-5 border-2 border-ink">
-                            <Icon name="event_available" className="text-4xl" />
-                        </div>
-                        <h2 className="font-display text-lg tracking-wide text-text-main">NOTHING BOOKED</h2>
-                        <p className="text-text-muted mt-2 max-w-xs text-sm">
-                            {clients.length === 0 ? 'Add a client before booking a session.' : 'Tap the + above to book a session for this day.'}
-                        </p>
-                    </div>
+                    <EmptyState
+                        icon="event_available"
+                        iconBg="bg-primary text-white"
+                        title="NOTHING BOOKED"
+                        description={clients.length === 0 ? 'Add a client before booking a session.' : 'Tap the + above to book a session for this day.'}
+                    />
                 ) : (
                     <div className="space-y-3">
                         {sessions.map(session => (

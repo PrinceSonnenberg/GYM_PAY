@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { useData } from '../context/DataContext';
+import PageHeader from '../components/PageHeader';
+import Modal from '../components/Modal';
 import { MetricType, ActiveGoal } from '../types';
 
 const templates = ['Weight Loss', 'Hypertrophy', 'Endurance', 'Flexibility', 'Strength Max', 'Fat Loss %', 'Joint Mobility', 'Cardio Fitness'];
@@ -123,15 +125,16 @@ const ClientGoalsPage: React.FC = () => {
 
     return (
         <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background font-inter text-text-main">
-            <div className="sticky top-0 z-50 flex items-center bg-ink p-4 pb-3 justify-between">
-                <button onClick={() => navigate(-1)} className="flex size-10 items-center justify-start text-white cursor-pointer">
-                    <Icon name="arrow_back" className="text-2xl" />
-                </button>
-                <h2 className="font-display text-lg tracking-wide text-white flex-1 text-center">SET CLIENT GOALS</h2>
-                <button onClick={() => navigate('/clients')} className="flex w-10 items-center justify-end cursor-pointer">
-                    <p className="text-white/60 text-sm font-bold uppercase shrink-0">Cancel</p>
-                </button>
-            </div>
+            <PageHeader
+                title="SET CLIENT GOALS"
+                centered
+                onBack={() => navigate(-1)}
+                rightAction={
+                    <button onClick={() => navigate('/clients')} className="flex w-10 items-center justify-end cursor-pointer">
+                        <p className="text-white/60 text-sm font-bold uppercase shrink-0">Cancel</p>
+                    </button>
+                }
+            />
 
             <main className="flex-1 pb-32">
                 <div className="p-4">
@@ -301,9 +304,9 @@ const ClientGoalsPage: React.FC = () => {
             </main>
 
             {/* Edit Active Goal Modal */}
-            {editingGoal && (
-                <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink p-5 space-y-4 shadow-2xl animate-fadeIn">
+            <Modal open={!!editingGoal} onClose={() => setEditingGoal(null)}>
+                {editingGoal && (
+                    <div className="p-5 space-y-4">
                         <div className="flex items-center justify-between border-b pb-3 border-border-light">
                             <div className="flex items-center gap-2.5">
                                 <div className={`size-10 rounded-xl flex items-center justify-center ${editingGoal.iconBg} ${editingGoal.iconColor}`}>
@@ -369,8 +372,8 @@ const ClientGoalsPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
 
             <div className="fixed bottom-0 left-0 w-full p-4 bg-gradient-to-t from-background via-background to-transparent z-40 pb-6 pt-12 pointer-events-none">
                 <button

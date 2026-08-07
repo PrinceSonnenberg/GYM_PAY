@@ -3,6 +3,8 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import BottomNav from '../components/BottomNav';
+import PageHeader from '../components/PageHeader';
+import Modal from '../components/Modal';
 import { useData } from '../context/DataContext';
 import { formatCurrency, getCurrencySymbol } from '../utils/format';
 import { ExpenseItem } from '../types';
@@ -61,16 +63,16 @@ const ExpensesPage: React.FC = () => {
 
     return (
         <div className="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-background font-inter">
-            <header className="sticky top-0 z-50 flex items-center bg-ink px-4 py-4 justify-between">
-                <button onClick={() => navigate(-1)} className="flex size-10 shrink-0 items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors"><Icon name="arrow_back" className="text-2xl" /></button>
-                <h2 className="font-display text-xl tracking-wide text-white">EXPENSES & RECEIPTS</h2>
-                <div className="size-10"></div>
-            </header>
+            <PageHeader
+                title="EXPENSES & RECEIPTS"
+                centered
+                onBack={() => navigate(-1)}
+            />
 
             {/* Receipt Modal for Tax Filing */}
-            {selectedExpense && (
-                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink overflow-hidden shadow-2xl animate-fadeIn flex flex-col max-h-[90vh]">
+            <Modal open={!!selectedExpense} onClose={() => setSelectedExpense(null)}>
+                {selectedExpense && (
+                    <div className="flex flex-col max-h-[90vh]">
                         <div className="bg-ink p-4 text-white flex justify-between items-center border-b-2 border-ink">
                             <div className="flex items-center gap-2">
                                 <Icon name="receipt" className="text-volt text-xl" />
@@ -96,7 +98,7 @@ const ExpensesPage: React.FC = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-text-muted font-bold text-[10px] uppercase">Amount</span>
-                                    <span className="font-mono font-bold text-danger text-sm">{formatCurrency(selectedExpense.amount)}</span>
+                                    <span className="font-mono font-bold text-danger text-sm">{formatCurrency(selectedExpense.amount, settings.invoiceDefaults.currency)}</span>
                                 </div>
                                 <div className="pt-2 border-t border-border-light flex items-center gap-1.5 text-emerald-700 font-bold text-[11px]">
                                     <Icon name="check_circle" className="text-emerald-600 text-[14px]" />
@@ -119,7 +121,7 @@ const ExpensesPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-background border-t-2 border-ink">
+                        <div className="p-4 bg-background border-t border-border-light">
                             <button
                                 onClick={() => setSelectedExpense(null)}
                                 className="w-full py-3 rounded-full bg-ink text-white font-bold uppercase text-xs tracking-wide hover:bg-black transition-colors"
@@ -128,8 +130,8 @@ const ExpensesPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
 
             <main className="flex-1 overflow-y-auto pb-28">
                 <div className="px-6 pb-6 pt-4">

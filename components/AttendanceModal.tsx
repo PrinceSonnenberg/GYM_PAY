@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Icon from './Icon';
+import Modal from './Modal';
 import { Session, SessionAttendanceStatus } from '../types';
 import { useData } from '../context/DataContext';
 
@@ -84,8 +85,8 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({ session, onClose }) =
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink p-5 space-y-4 shadow-2xl animate-fadeIn max-h-[90vh] overflow-y-auto">
+        <Modal open={!!session} onClose={onClose}>
+            <div className="p-5 space-y-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between border-b pb-3 border-border-light">
                     <div>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Attendance Status</span>
@@ -166,7 +167,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({ session, onClose }) =
                     </button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

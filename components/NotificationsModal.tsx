@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from './Icon';
+import Modal from './Modal';
 import { Invoice, Session, Client } from '../types';
 import { formatCurrency, invoiceSubtotal } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +21,6 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
     clients
 }) => {
     const navigate = useNavigate();
-    if (!isOpen) return null;
 
     const getClientName = (id: string) => clients.find(c => c.id === id)?.name || 'Client';
 
@@ -63,8 +63,8 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fadeIn">
-            <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl border-2 border-ink shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+        <Modal open={isOpen} onClose={onClose} maxWidth="max-w-md">
+            <div className="flex flex-col max-h-[85vh]">
                 <div className="flex items-center justify-between p-5 border-b-2 border-ink bg-ink text-white">
                     <div className="flex items-center gap-2">
                         <Icon name="notifications" className="text-volt text-[22px]" />
@@ -110,7 +110,7 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
                     </p>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

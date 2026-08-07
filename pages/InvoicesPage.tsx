@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '../components/Icon';
 import BottomNav from '../components/BottomNav';
+import PageHeader from '../components/PageHeader';
+import Modal from '../components/Modal';
+import EmptyState from '../components/EmptyState';
 import { useData } from '../context/DataContext';
 import { formatCurrency, invoiceSubtotal } from '../utils/format';
 import { downloadInvoicePdf } from '../utils/pdf';
@@ -55,24 +58,24 @@ const InvoicesPage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-background font-inter text-text-main">
-            <header className="sticky top-0 z-30 bg-ink px-5 py-5 flex items-center justify-between">
-                <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Billing Overview</p>
-                    <h1 className="font-display text-2xl text-white tracking-wide">INVOICES</h1>
-                </div>
-                <button
-                    onClick={() => navigate('/invoice')}
-                    className="flex h-10 px-4 items-center justify-center gap-1 rounded-full bg-volt text-ink font-bold uppercase text-xs tracking-wide hover:bg-volt/80 transition-colors"
-                >
-                    <Icon name="add" className="text-[18px]" />
-                    <span>New Invoice</span>
-                </button>
-            </header>
+            <PageHeader
+                title="INVOICES"
+                eyebrow="Billing Overview"
+                rightAction={
+                    <button
+                        onClick={() => navigate('/invoice')}
+                        className="flex h-10 px-4 items-center justify-center gap-1 rounded-full bg-volt text-ink font-bold uppercase text-xs tracking-wide hover:bg-volt/80 transition-colors"
+                    >
+                        <Icon name="add" className="text-[18px]" />
+                        <span>New Invoice</span>
+                    </button>
+                }
+            />
 
             {/* Selected Invoice Preview Modal */}
-            {selectedInvoice && (
-                <div className="fixed inset-0 z-50 bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-white rounded-3xl border-2 border-ink overflow-hidden shadow-2xl animate-fadeIn flex flex-col max-h-[90vh]">
+            <Modal open={!!selectedInvoice} onClose={() => setSelectedInvoice(null)}>
+                {selectedInvoice && (
+                    <div className="flex flex-col max-h-[90vh]">
                         <div className="bg-ink p-5 text-white flex justify-between items-center border-b-2 border-ink">
                             <div>
                                 <h3 className="font-display text-lg tracking-wide">INVOICE #{selectedInvoice.id.slice(-6).toUpperCase()}</h3>
@@ -185,13 +188,13 @@ const InvoicesPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
 
             {/* PDF Printable Invoice Modal */}
-            {showPdfView && selectedInvoice && (
-                <div className="fixed inset-0 z-50 bg-ink/80 backdrop-blur-md flex items-center justify-center p-4 overflow-visible">
-                    <div className="w-full max-w-xl bg-white rounded-3xl border-2 border-ink shadow-2xl overflow-hidden my-auto flex flex-col max-h-[95vh]">
+            <Modal open={showPdfView && !!selectedInvoice} onClose={() => setShowPdfView(false)} maxWidth="xl">
+                {showPdfView && selectedInvoice && (
+                    <div className="flex flex-col max-h-[95vh]">
                         {/* Action Header */}
                         <div className="bg-ink p-4 text-white flex justify-between items-center border-b-2 border-ink shrink-0">
                             <div className="flex items-center gap-2">
@@ -226,7 +229,7 @@ const InvoicesPage: React.FC = () => {
                         </div>
 
                         {/* Printable Document Body */}
-                        <div className="p-8 overflow-visible text-ink font-inter bg-white" id="printable-invoice">
+                        <div className="p-8 overflow-y-auto overflow-x-hidden text-ink font-inter bg-white" id="printable-invoice">
                             {/* Document Header with Logo & Business Profile */}
                             <div className="flex justify-between items-start border-b-2 border-ink pb-6 mb-6">
                                 <div className="mb-4">
@@ -341,8 +344,8 @@ const InvoicesPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
 
             <main className="flex-1 p-5 pb-28 space-y-6">
                 {reminderToast && (
@@ -399,17 +402,12 @@ const InvoicesPage: React.FC = () => {
 
                 {/* List */}
                 {filteredInvoices.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-2xl border-2 border-ink p-6">
-                        <Icon name="receipt_long" className="text-5xl text-text-muted mb-3" />
-                        <h3 className="font-display text-lg tracking-wide">NO INVOICES FOUND</h3>
-                        <p className="text-xs text-text-muted mt-1 max-w-xs">Create your first invoice to bill clients for training sessions or meal plans.</p>
-                        <button
-                            onClick={() => navigate('/invoice')}
-                            className="mt-4 px-5 py-2.5 rounded-full bg-primary text-white font-bold uppercase text-xs tracking-wide border-2 border-ink shadow-pop"
-                        >
-                            Create Invoice
-                        </button>
-                    </div>
+                    <EmptyState
+                        icon="receipt_long"
+                        title="NO INVOICES FOUND"
+                        description="Create your first invoice to bill clients for training sessions or meal plans."
+                        action={{ label: "Create Invoice", onClick: () => navigate('/invoice') }}
+                    />
                 ) : (
                     <div className="space-y-3">
                         {filteredInvoices.map(inv => {

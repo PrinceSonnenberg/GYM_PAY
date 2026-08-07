@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
+import PageHeader from '../components/PageHeader';
 import { useData } from '../context/DataContext';
 import { formatCurrency, invoiceSubtotal } from '../utils/format';
 import { Invoice } from '../types';
@@ -86,20 +87,11 @@ const StatisticsPage: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-background font-inter text-text-main pb-24">
             {/* Header */}
-            <header className="sticky top-0 z-30 flex items-center justify-between bg-ink px-5 py-4 shadow-md">
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => navigate(-1)}
-                        className="flex size-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-                    >
-                        <Icon name="arrow_back" className="text-[20px]" />
-                    </button>
-                    <div>
-                        <h1 className="font-display text-xl text-white tracking-wide">STATISTICS</h1>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Business Overview</p>
-                    </div>
-                </div>
-            </header>
+            <PageHeader
+                title="STATISTICS"
+                eyebrow="Business Overview"
+                onBack={() => navigate(-1)}
+            />
 
             <main className="flex-1 px-5 space-y-6 pt-6">
                 

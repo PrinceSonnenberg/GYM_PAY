@@ -24,20 +24,22 @@ export const requireAuth = async (
 ) => {
   const authHeader = req.headers.authorization;
 
-  let userToSet: DecodedIdToken | { uid: string; email: string } = { uid: 'default-user', email: 'coach.alex@gympayfit.com' };
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (process.env.ALLOW_DEV_AUTH_FALLBACK === 'true') {
+      req.user = { uid: 'default-user', email: 'coach.alex@gympayfit.com' };
+    } else {
+      return res.status(401).json({ error: 'Unauthorized: No token provided' });
+    }
+  } else {
     const token = authHeader.split('Bearer ')[1];
     try {
       // Attempt to verify Firebase ID token using Firebase Admin SDK
-      const decodedToken = await adminAuth.verifyIdToken(token);
-      userToSet = decodedToken;
+      req.user = await adminAuth.verifyIdToken(token);
     } catch (error) {
-      console.warn("Token verification failed, falling back to default user", error);
+      console.warn("Token verification failed", error);
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
     }
   }
-
-  req.user = userToSet;
 
   try {
     // Ensure the user exists in the database to satisfy foreign key constraints

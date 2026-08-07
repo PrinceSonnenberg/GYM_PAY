@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../Icon';
 import Modal from '../Modal';
-import { Invoice, Client, Settings } from '../../types';
+import { Invoice, Client, UserSettings } from '../../types';
 import { formatCurrency, invoiceSubtotal } from '../../utils/format';
 import { useData } from '../../context/DataContext';
 
@@ -12,7 +12,7 @@ interface InvoiceSuccessModalProps {
     createdInvoice: Invoice | null;
     setCreatedInvoice: React.Dispatch<React.SetStateAction<Invoice | null>>;
     selectedClient: Client | undefined;
-    settings: Settings;
+    settings: UserSettings;
     currency: string;
     onViewPdf: () => void;
 }

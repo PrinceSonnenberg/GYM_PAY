@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../Icon';
 import Modal from '../Modal';
-import { Invoice, Client, Settings } from '../../types';
+import { Invoice, Client, UserSettings } from '../../types';
 import { formatCurrency, invoiceSubtotal } from '../../utils/format';
 import { downloadInvoicePdf } from '../../utils/pdf';
 
@@ -10,7 +10,7 @@ interface InvoicePDFModalProps {
     onClose: () => void;
     invoice: Invoice | null;
     client: Client | undefined;
-    settings: Settings;
+    settings: UserSettings;
     currency: string;
 }
 
@@ -38,7 +38,7 @@ export const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => downloadInvoicePdf(invoice, client, settings)}
+                            onClick={() => downloadInvoicePdf('printable-invoice', `Invoice_${invoice.id.slice(-8)}`)}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-volt border-2 border-ink rounded-lg font-bold text-xs uppercase"
                         >
                             <Icon name="download" className="text-[16px]" />
@@ -52,7 +52,7 @@ export const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({
                 
                 <div className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6">
                     {/* Simulated PDF Paper */}
-                    <div className="bg-white shadow-md mx-auto aspect-[1/1.414] w-full max-w-[500px] p-6 text-ink flex flex-col font-sans relative">
+                    <div id="printable-invoice" className="bg-white shadow-md mx-auto aspect-[1/1.414] w-full max-w-[500px] p-6 text-ink flex flex-col font-sans relative">
                         <div className="flex justify-between items-start mb-8">
                             <div>
                                 {settings.profile.logoUrl ? (

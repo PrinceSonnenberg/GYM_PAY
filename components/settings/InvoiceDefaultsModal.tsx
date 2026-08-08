@@ -41,12 +41,13 @@ export const InvoiceDefaultsModal: React.FC<{ open: boolean, onClose: () => void
                         <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Currency Symbol</label>
                         <select
                             value={currency}
-                            onChange={e => setCurrency(e.target.value as 'USD' | 'EUR' | 'GBP')}
+                            onChange={e => setCurrency(e.target.value)}
                             className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm cursor-pointer"
                         >
-                            <option value="USD">USD ($)</option>
-                            <option value="EUR">EUR (€)</option>
-                            <option value="GBP">GBP (£)</option>
+                            <option value="USD ($)">USD ($)</option>
+                            <option value="EUR (€)">EUR (€)</option>
+                            <option value="GBP (£)">GBP (£)</option>
+                            <option value="ZAR (R)">ZAR (R)</option>
                         </select>
                     </div>
                     <div>

@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import AttendanceBadge from '../components/AttendanceBadge';
 import AttendanceModal from '../components/AttendanceModal';
@@ -17,6 +17,7 @@ const fullDateLabel = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateS
 const emptyDraft = { clientId: '', time: '', sessionType: '', format: 'video' as 'video' | 'location' };
 
 const CalendarPage: React.FC = () => {
+    const navigate = useNavigate();
     const location = useLocation();
     const { clients, getSessionsForDate, addSession, removeSession } = useData();
     const [selectedDate, setSelectedDate] = useState(toISO(new Date()));

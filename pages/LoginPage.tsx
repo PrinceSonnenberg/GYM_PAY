@@ -53,6 +53,7 @@ const LoginPage: React.FC = () => {
     const handleGoogleSignIn = async () => {
         setError(null);
         setLoading(true);
+
         try {
             await signInWithPopup(auth, googleAuthProvider);
             navigate('/');
@@ -64,17 +65,27 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full min-h-screen bg-background font-inter text-text-main items-center justify-center p-5">
-            <div className="w-full max-w-sm flex flex-col gap-8">
-                
-                <div className="text-center">
-                    <h1 className="font-display text-4xl text-ink tracking-wide">GYMPAY</h1>
-                    <p className="text-xs font-bold uppercase tracking-widest text-text-muted mt-2">
-                        Client & Business Management
-                    </p>
-                </div>
+        <div className="relative min-h-screen w-full overflow-hidden flex flex-col justify-end font-inter text-text-main">
+            {/* Full-bleed background photo */}
+            <img
+                src="/login-bg-1.jpg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover z-0"
+            />
+            {/* Gradient overlay: transparent at top, solid ink at the bottom where the card sits */}
+            <div className="absolute inset-0 z-[1] bg-gradient-to-b from-ink/10 via-ink/20 to-ink" />
 
-                <div className="plate bg-white p-6 border-2 border-ink shadow-md flex flex-col gap-6">
+            {/* Logo, overlaid directly on the photo near the top */}
+            <div className="absolute top-12 left-0 right-0 z-10 text-center px-5">
+                <h1 className="font-display text-4xl text-white tracking-wide drop-shadow-md">GYMPAY</h1>
+                <p className="text-xs font-bold uppercase tracking-widest text-white/80 mt-2 drop-shadow-md">
+                    Invoicing done in 3,2,1
+                </p>
+            </div>
+
+            {/* Card, anchored to the bottom, overlapping the lower part of the photo */}
+            <div className="relative z-10 w-full max-w-sm mx-auto flex flex-col gap-6 p-5 pb-8">
+                <div className="plate bg-white/60 backdrop-blur-[10px] p-6 border-2 border-ink shadow-md flex flex-col gap-6">
                     <div className="text-center">
                         <h2 className="font-bold text-xl text-ink mb-1">{isSignUp ? 'Create an Account' : 'Welcome Back'}</h2>
                         <p className="text-sm text-text-muted">
@@ -122,13 +133,12 @@ const LoginPage: React.FC = () => {
                         </button>
                     </form>
 
-                    <div className="relative flex items-center justify-center text-sm my-2">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-border-light"></div>
-                        </div>
-                        <div className="relative bg-white px-2 text-text-muted font-bold uppercase tracking-widest text-[10px]">
+                    <div className="flex items-center justify-center text-sm my-2">
+                        <div className="flex-grow border-t border-border-light"></div>
+                        <div className="px-2 text-text-muted font-bold uppercase tracking-widest text-[10px]">
                             Or continue with
                         </div>
+                        <div className="flex-grow border-t border-border-light"></div>
                     </div>
 
                     <button 
@@ -150,12 +160,11 @@ const LoginPage: React.FC = () => {
                 <div className="text-center">
                     <button 
                         onClick={() => setIsSignUp(!isSignUp)}
-                        className="text-sm font-medium text-text-muted hover:text-ink transition-colors"
+                        className="text-sm font-medium text-white hover:text-white/80 transition-colors drop-shadow-md"
                     >
                         {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                     </button>
                 </div>
-
             </div>
         </div>
     );

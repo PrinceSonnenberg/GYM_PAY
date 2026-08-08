@@ -25,8 +25,10 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
     const getClientName = (id: string) => clients.find(c => c.id === id)?.name || 'Client';
 
     const invoiceTotal = (inv: Invoice) => {
-        const sub = invoiceSubtotal(inv.items);
-        return sub + sub * inv.taxRate;
+        const sub = invoiceSubtotal(inv?.items);
+        const taxRate = typeof inv?.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv?.taxRate ?? 0)) || 0;
+        const total = sub + sub * taxRate;
+        return Number.isNaN(total) ? 0 : total;
     };
 
     const pendingInvoices = invoices.filter(i => i.status === 'sent');

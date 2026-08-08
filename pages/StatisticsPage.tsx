@@ -24,8 +24,10 @@ const StatisticsPage: React.FC = () => {
     const todayStr = new Date().toISOString().slice(0, 10);
 
     const invoiceTotal = (inv: Invoice) => {
-        const subtotal = invoiceSubtotal(inv.items);
-        return subtotal + subtotal * inv.taxRate;
+        const subtotal = invoiceSubtotal(inv?.items);
+        const taxRate = typeof inv?.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv?.taxRate ?? 0)) || 0;
+        const total = subtotal + subtotal * taxRate;
+        return Number.isNaN(total) ? 0 : total;
     };
 
     invoices.forEach(inv => {

@@ -25,8 +25,10 @@ const HomePage: React.FC = () => {
     const clientNameFor = (id: string) => clients.find(c => c.id === id)?.name || 'Unknown';
 
     const invoiceTotal = (inv: typeof invoices[number]) => {
-        const subtotal = invoiceSubtotal(inv.items);
-        return subtotal + subtotal * inv.taxRate;
+        const subtotal = invoiceSubtotal(inv?.items);
+        const taxRate = typeof inv?.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv?.taxRate ?? 0)) || 0;
+        const total = subtotal + subtotal * taxRate;
+        return Number.isNaN(total) ? 0 : total;
     };
     const paidInvoices = invoices.filter(i => i.status === 'paid');
     const pendingInvoices = invoices.filter(i => i.status === 'sent');
@@ -114,13 +116,15 @@ const HomePage: React.FC = () => {
     };
 
     const trendData = getTrendData();
-    const maxVal = Math.max(...trendData.values, 100);
+    const maxVal = Math.max(...trendData.values.map(v => v || 0), 100);
 
     // Calculate Y coords for SVG (0..100 X, 0..50 Y, lower Y = higher value)
     const points = trendData.values.map((v, i) => {
-        const x = (i / (trendData.values.length - 1)) * 100;
-        const y = 45 - (v / maxVal) * 35;
-        return { x, y, val: v, label: trendData.labels[i] };
+        let x = (i / (trendData.values.length - 1)) * 100;
+        let y = 45 - ((v || 0) / maxVal) * 35;
+        if (Number.isNaN(x)) x = 0;
+        if (Number.isNaN(y)) y = 45;
+        return { x, y, val: v || 0, label: trendData.labels[i] };
     });
 
     const pathD = points.reduce((acc, p, i) => {
@@ -201,30 +205,32 @@ const HomePage: React.FC = () => {
                 )}
                 {(settings.homePreferences?.showIncomeTrend ?? true) && (
                 <section className="plate bg-surface p-6 border-2 border-ink">
-                    <div className="mb-4 flex items-center justify-between">
-                        <div>
-                            <h3 className="font-display text-lg tracking-wide flex items-center gap-2">
+                    <div className="mb-6 flex flex-col gap-2">
+                        <div className="flex items-start justify-between gap-4">
+                            <h3 className="font-display text-xl tracking-wide uppercase leading-none text-ink pt-1">
                                 INCOME TREND
-                                <button onClick={() => navigate('/statistics')} className="text-[10px] font-bold uppercase tracking-widest text-primary hover:text-primary-hover bg-primary/10 px-2 py-0.5 rounded-full transition-colors ml-2 flex items-center gap-1">
-                                    Full Stats <Icon name="chevron_right" className="text-[12px]" />
-                                </button>
                             </h3>
-                            <p className="text-xs font-bold text-text-muted">{formatCurrency(trendData.total)} total in period</p>
+                            <div className="relative shrink-0">
+                                <select 
+                                     value={trendPeriod}
+                                    onChange={e => {
+                                        setTrendPeriod(e.target.value as any);
+                                        setHoveredPoint(null);
+                                    }}
+                                    className="appearance-none bg-background border-2 border-ink rounded-xl py-1.5 pl-3 pr-8 text-xs font-bold uppercase tracking-wide focus:outline-none cursor-pointer hover:bg-white transition-colors"
+                                >
+                                    <option value="This Month">This Month</option>
+                                    <option value="Last Month">Last Month</option>
+                                    <option value="Yearly">Yearly</option>
+                                </select>
+                                <Icon name="expand_more" className="absolute right-2 top-2 text-[18px] pointer-events-none text-ink" />
+                            </div>
                         </div>
-                        <div className="relative">
-                            <select 
-                                value={trendPeriod}
-                                onChange={e => {
-                                    setTrendPeriod(e.target.value as any);
-                                    setHoveredPoint(null);
-                                }}
-                                className="appearance-none bg-background border-2 border-ink rounded-full py-1 pl-3 pr-8 text-xs font-bold uppercase tracking-wide focus:outline-none cursor-pointer hover:bg-white transition-colors"
-                            >
-                                <option value="This Month">This Month</option>
-                                <option value="Last Month">Last Month</option>
-                                <option value="Yearly">Yearly</option>
-                            </select>
-                            <Icon name="expand_more" className="absolute right-2 top-1.5 text-[16px] pointer-events-none" />
+                        <div>
+                            <button onClick={() => navigate('/statistics')} className="text-[16px] font-bold uppercase tracking-widest text-primary hover:text-primary-hover transition-colors flex items-center gap-0.5 mb-1">
+                                Stats <Icon name="chevron_right" className="text-[18px]" />
+                            </button>
+                            <p className="text-sm font-bold text-text-muted">{formatCurrency(trendData.total)} total in period</p>
                         </div>
                     </div>
 

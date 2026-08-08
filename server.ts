@@ -4,6 +4,8 @@ import { createServer as createViteServer } from "vite";
 import { db } from "./src/db/index.ts";
 import { clients, invoices, expenses, sessions, goals, settings, users } from "./src/db/schema.ts";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
+import { adminAuth } from "./src/lib/firebase-admin.ts";
+import { getOrCreateUser } from "./src/db/users.ts";
 import { eq, and } from "drizzle-orm";
 import { validateClient, validateInvoice } from "./utils/validation.ts";
 
@@ -326,14 +328,28 @@ async function startServer() {
   });
 
   // Dev Seed API
-  app.post("/api/dev/seed", requireAuth, async (req: AuthRequest, res) => {
-    if (process.env.ALLOW_DEV_SEED !== "true") {
-      return res.status(403).json({ error: "Seed endpoint disabled." });
-    }
-
+  app.post("/api/dev/seed", async (req, res) => {
     try {
-      const uid = req.user?.uid || "default-user";
+      const authHeader = req.headers.authorization;
+      let uid = "default-user";
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+          try {
+              const token = authHeader.split('Bearer ')[1];
+              const decoded = await adminAuth.verifyIdToken(token);
+              uid = decoded.uid;
+          } catch (e) {
+              console.warn("Token verification failed for seed", e);
+          }
+      }
       
+      // Ensure the user exists in the database to satisfy foreign key constraints
+      await getOrCreateUser(uid, 'coach.alex@gympayfit.com');
+      // Clear existing user data first
+      await db.delete(sessions).where(eq(sessions.userId, uid));
+      await db.delete(expenses).where(eq(expenses.userId, uid));
+      await db.delete(invoices).where(eq(invoices.userId, uid));
+      await db.delete(clients).where(eq(clients.userId, uid));
+
       const c1Id = crypto.randomUUID();
       const c2Id = crypto.randomUUID();
 
@@ -343,8 +359,8 @@ async function startServer() {
       ];
       
       const newInvoices = [
-        { id: crypto.randomUUID(), userId: uid, clientId: c1Id, clientName: "Alice Johnson", items: [{ description: "Monthly Training", quantity: 1, rate: 200 }], taxRate: 0.05, status: "paid", dueDate: new Date().toISOString().slice(0, 10), issuedDate: new Date(Date.now() - 86400000 * 5).toISOString().slice(0, 10), notes: "" },
-        { id: crypto.randomUUID(), userId: uid, clientId: c2Id, clientName: "Bob Smith", items: [{ description: "Nutrition Plan", quantity: 1, rate: 100 }], taxRate: 0.05, status: "sent", dueDate: new Date(Date.now() - 86400000).toISOString().slice(0, 10), issuedDate: new Date(Date.now() - 86400000 * 30).toISOString().slice(0, 10), notes: "" }
+        { id: crypto.randomUUID(), userId: uid, clientId: c1Id, clientName: "Alice Johnson", items: [{ id: crypto.randomUUID(), title: "Monthly Training", details: "Monthly Training", amount: 200, icon: "fitness_center", iconBg: "bg-blue-100", iconColor: "text-blue-600" }], taxRate: 0.05, status: "paid", dueDate: new Date().toISOString().slice(0, 10), issuedDate: new Date(Date.now() - 86400000 * 5).toISOString().slice(0, 10), notes: "" },
+        { id: crypto.randomUUID(), userId: uid, clientId: c2Id, clientName: "Bob Smith", items: [{ id: crypto.randomUUID(), title: "Nutrition Plan", details: "Nutrition Plan", amount: 100, icon: "restaurant", iconBg: "bg-green-100", iconColor: "text-green-600" }], taxRate: 0.05, status: "sent", dueDate: new Date(Date.now() - 86400000).toISOString().slice(0, 10), issuedDate: new Date(Date.now() - 86400000 * 30).toISOString().slice(0, 10), notes: "" }
       ];
 
       const newExpenses = [

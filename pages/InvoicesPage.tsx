@@ -34,8 +34,10 @@ const InvoicesPage: React.FC = () => {
     const clientFor = (clientId: string) => clients.find(c => c.id === clientId);
 
     const calcTotal = (inv: Invoice) => {
-        const sub = invoiceSubtotal(inv.items);
-        return sub + sub * inv.taxRate;
+        const sub = invoiceSubtotal(inv?.items);
+        const taxRate = typeof inv?.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv?.taxRate ?? 0)) || 0;
+        const total = sub + sub * taxRate;
+        return Number.isNaN(total) ? 0 : total;
     };
 
     const filteredInvoices = invoices.filter(inv => {
@@ -61,6 +63,7 @@ const InvoicesPage: React.FC = () => {
             <PageHeader
                 title="INVOICES"
                 eyebrow="Billing Overview"
+                onBack={() => navigate(-1)}
                 rightAction={
                     <button
                         onClick={() => navigate('/invoice')}

@@ -49,15 +49,25 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </>
         ) : (
           <>
-            <div>
-              {eyebrow && (
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
-                  {eyebrow}
-                </p>
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex size-10 items-center justify-start text-white cursor-pointer shrink-0"
+                >
+                  <Icon name="arrow_back" className="text-[24px]" />
+                </button>
               )}
-              <h1 className="font-display text-2xl text-white tracking-wide">
-                {title}
-              </h1>
+              <div>
+                {eyebrow && (
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                    {eyebrow}
+                  </p>
+                )}
+                <h1 className="font-display text-2xl text-white tracking-wide">
+                  {title}
+                </h1>
+              </div>
             </div>
             {rightAction}
           </>

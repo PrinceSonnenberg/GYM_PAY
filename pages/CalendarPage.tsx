@@ -59,6 +59,7 @@ const CalendarPage: React.FC = () => {
         <div className="flex flex-col min-h-screen bg-background">
             <PageHeader
                 title="CALENDAR"
+                onBack={() => navigate(-1)}
                 rightAction={
                     <button
                         onClick={() => setShowForm(v => !v)}

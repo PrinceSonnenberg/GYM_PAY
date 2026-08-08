@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import PageHeader from '../components/PageHeader';
+import Modal from '../components/Modal';
 import { useData } from '../context/DataContext';
 import { apiFetch } from '../utils/api';
 
@@ -15,9 +17,10 @@ import {
     LogoutModal
 } from '../components/settings';
 
-type ModalType = 'theme' | 'home' | 'profile' | 'payout' | 'notifications' | 'invoiceDefaults' | 'taxRate' | 'services' | 'exportData' | 'logout' | null;
+type ModalType = 'theme' | 'home' | 'profile' | 'payout' | 'notifications' | 'invoiceDefaults' | 'taxRate' | 'services' | 'exportData' | 'logout' | 'seedData' | null;
 
 const SettingsPage: React.FC = () => {
+    const navigate = useNavigate();
     const { settings, services, resetAllData, clients, invoices, expenses } = useData();
     const [activeModal, setActiveModal] = useState<ModalType>(null);
     const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -45,6 +48,7 @@ const SettingsPage: React.FC = () => {
             <PageHeader
                 title="SETTINGS"
                 eyebrow="Preferences"
+                onBack={() => navigate(-1)}
                 rightAction={
                     <div className="flex size-10 items-center justify-center rounded-full bg-volt text-ink font-display text-sm font-bold overflow-hidden border border-ink">
                         {settings.profile.logoUrl ? (
@@ -243,62 +247,20 @@ const SettingsPage: React.FC = () => {
                         </button>
 
                         <button
-                            onClick={() => {
-                                if (confirm('Reset all clients, invoices, expenses, and settings to original sample data?')) {
-                                    resetAllData();
-                                    triggerToast('App reset to initial sample state');
-                                }
-                            }}
+                            onClick={() => setActiveModal('seedData')}
                             className="flex w-full items-center gap-4 p-4 text-left hover:bg-background/60 transition-colors"
                         >
                             <div className="flex size-10 items-center justify-center rounded-full bg-danger-soft text-danger">
                                 <Icon name="restart_alt" className="text-[20px]" />
                             </div>
                             <div className="flex-1">
-                                <span className="block font-bold text-sm text-danger">Reset Local Sample Data</span>
-                                <span className="block text-xs text-text-muted">Restore default demo dataset locally</span>
+                                <span className="block font-bold text-sm text-danger">Load DB Sample Data</span>
+                                <span className="block text-xs text-text-muted">Populate DB with sample dataset</span>
                             </div>
                             <Icon name="chevron_right" className="text-text-muted" />
                         </button>
                     </div>
                 </div>
-
-                {/* Developer Options */}
-                {import.meta.env.VITE_ALLOW_DEV_SEED === 'true' && (
-                    <div>
-                        <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest px-1 mb-2">Developer Options</h3>
-                        <div className="rounded-2xl bg-white border-2 border-ink overflow-hidden shadow-sm">
-                            <button
-                                onClick={async () => {
-                                    if (confirm('Load database sample data? This will add seed records.')) {
-                                        try {
-                                            const res = await apiFetch('/api/dev/seed', { method: 'POST' });
-                                            if (res.ok) {
-                                                triggerToast('Sample data seeded successfully. Refreshing...');
-                                                setTimeout(() => window.location.reload(), 1500);
-                                            } else {
-                                                triggerToast('Failed to seed data');
-                                            }
-                                        } catch (e) {
-                                            console.error(e);
-                                            triggerToast('Error seeding data');
-                                        }
-                                    }
-                                }}
-                                className="flex w-full items-center gap-4 p-4 text-left hover:bg-background/60 transition-colors"
-                            >
-                                <div className="flex size-10 items-center justify-center rounded-full bg-volt text-ink">
-                                    <Icon name="data_object" className="text-[20px]" />
-                                </div>
-                                <div className="flex-1">
-                                    <span className="block font-bold text-sm text-ink">Load DB Sample Data</span>
-                                    <span className="block text-xs text-text-muted">Populate DB with sample clients & invoices</span>
-                                </div>
-                                <Icon name="chevron_right" className="text-text-muted" />
-                            </button>
-                        </div>
-                    </div>
-                )}
 
                 {/* Logout Button */}
                 <button
@@ -319,6 +281,43 @@ const SettingsPage: React.FC = () => {
             <TaxRateModal open={activeModal === 'taxRate'} onClose={() => setActiveModal(null)} onSuccess={triggerToast} />
             <ServicesSettingsModal open={activeModal === 'services'} onClose={() => setActiveModal(null)} onSuccess={triggerToast} />
             <LogoutModal open={activeModal === 'logout'} onClose={() => setActiveModal(null)} />
+
+            <Modal open={activeModal === 'seedData'} onClose={() => setActiveModal(null)}>
+                <div className="p-6">
+                    <h2 className="text-xl font-display text-ink mb-2">Load DB Sample Data</h2>
+                    <p className="text-sm text-text-muted mb-6">
+                        Are you sure you want to load sample data? This will clear your current data and add seed records.
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setActiveModal(null)}
+                            className="flex-1 rounded-full border-2 border-ink py-2.5 font-bold uppercase tracking-wide text-ink text-sm hover:bg-background transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={async () => {
+                                setActiveModal(null);
+                                try {
+                                    const res = await apiFetch('/api/dev/seed', { method: 'POST' });
+                                    if (res.ok) {
+                                        triggerToast('Sample data seeded successfully. Refreshing...');
+                                        setTimeout(() => window.location.reload(), 1500);
+                                    } else {
+                                        triggerToast('Failed to seed data');
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                    triggerToast('Error seeding data');
+                                }
+                            }}
+                            className="flex-1 rounded-full bg-danger border-2 border-danger py-2.5 font-bold uppercase tracking-wide text-white text-sm hover:bg-danger/80 transition-colors"
+                        >
+                            Proceed
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

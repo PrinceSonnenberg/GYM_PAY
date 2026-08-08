@@ -140,6 +140,7 @@ const ClientsPage: React.FC = () => {
             <PageHeader
                 title={`CLIENTS (${clients.length})`}
                 eyebrow="Roster"
+                onBack={() => navigate(-1)}
                 rightAction={
                     <button
                         onClick={() => {

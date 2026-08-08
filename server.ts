@@ -328,23 +328,18 @@ async function startServer() {
   });
 
   // Dev Seed API
-  app.post("/api/dev/seed", async (req, res) => {
+  app.post("/api/dev/seed", requireAuth, async (req: AuthRequest, res) => {
     try {
-      const authHeader = req.headers.authorization;
-      let uid = "default-user";
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-          try {
-              const token = authHeader.split('Bearer ')[1];
-              const decoded = await adminAuth.verifyIdToken(token);
-              uid = decoded.uid;
-          } catch (e) {
-              console.warn("Token verification failed for seed", e);
-          }
+      if (process.env.ALLOW_DEV_SEED !== "true") {
+        return res.status(403).json({ error: "Dev seed endpoint is disabled" });
       }
-      
-      // Ensure the user exists in the database to satisfy foreign key constraints
-      await getOrCreateUser(uid, 'coach.alex@gympayfit.com');
-      // Clear existing user data first
+
+      const uid = req.user?.uid;
+      if (!uid) {
+        return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
+      }
+
+      // Clear existing user data first for this authenticated user
       await db.delete(sessions).where(eq(sessions.userId, uid));
       await db.delete(expenses).where(eq(expenses.userId, uid));
       await db.delete(invoices).where(eq(invoices.userId, uid));

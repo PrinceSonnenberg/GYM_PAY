@@ -20,7 +20,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-30 flex flex-col bg-ink px-5 py-5 gap-3">
-      <div className={`flex items-center ${centered ? 'justify-between' : 'justify-between'}`}>
+      <div className="flex items-center justify-between">
         {centered ? (
           <>
             <div className="w-10">

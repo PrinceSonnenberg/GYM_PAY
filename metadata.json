@@ -1,6 +1,0 @@
-{
-  "name": "GymPay",
-  "description": "A comprehensive dashboard for fitness coaches to manage clients, finances, and schedules. Track revenue, monitor income trends, manage client goals, create invoices, and log expenses all in one place.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

@@ -165,12 +165,20 @@ const ClientGoalsPage: React.FC = () => {
         );
     }
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate(clientId ? `/clients/${clientId}` : '/clients');
+        }
+    };
+
     return (
         <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background font-inter text-text-main">
             <PageHeader
                 title="SET CLIENT GOALS"
                 centered
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
                 rightAction={
                     <button onClick={() => navigate(clientId ? `/clients/${clientId}` : '/clients')} className="flex items-center justify-end cursor-pointer">
                         <p className="text-volt font-bold text-sm uppercase shrink-0 hover:underline">Done</p>

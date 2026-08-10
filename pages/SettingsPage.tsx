@@ -42,13 +42,21 @@ const SettingsPage: React.FC = () => {
         triggerToast('Backup JSON exported');
     };
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-background font-inter text-text-main">
             {/* Header */}
             <PageHeader
                 title="SETTINGS"
                 eyebrow="Preferences"
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
                 rightAction={
                     <div className="flex size-10 items-center justify-center rounded-full bg-volt text-ink font-display text-sm font-bold overflow-hidden border border-ink">
                         {settings.profile.logoUrl ? (

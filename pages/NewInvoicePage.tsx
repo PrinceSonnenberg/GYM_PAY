@@ -193,16 +193,24 @@ const NewInvoicePage: React.FC = () => {
         setCreatedInvoice(newInv);
     };
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/invoices');
+        }
+    };
+
     return (
         <div className="relative flex flex-col min-h-screen w-full max-w-md mx-auto overflow-hidden bg-background font-inter text-text-main">
             <PageHeader
                 title="CREATE INVOICE"
                 centered
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
                 rightAction={
                     <button
                         onClick={handleSend}
-                        className="flex items-center justify-center h-9 px-4 rounded-full bg-volt hover:bg-volt/80 transition-colors"
+                        className="flex items-center justify-center h-9 px-4 rounded-full bg-volt hover:bg-volt/80 transition-colors cursor-pointer"
                     >
                         <span className="text-ink text-sm font-bold uppercase tracking-wide">Save</span>
                     </button>
@@ -212,7 +220,10 @@ const NewInvoicePage: React.FC = () => {
             {/* Success Invoice Modal / Sheet */}
             <InvoiceSuccessModal
                 open={!!createdInvoice}
-                onClose={() => {}}
+                onClose={() => {
+                    setCreatedInvoice(null);
+                    navigate('/');
+                }}
                 createdInvoice={createdInvoice}
                 setCreatedInvoice={setCreatedInvoice}
                 selectedClient={selectedClient}

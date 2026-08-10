@@ -86,13 +86,21 @@ const StatisticsPage: React.FC = () => {
         return Object.values(data).sort((a, b) => b.monthSort.localeCompare(a.monthSort));
     }, [invoices, expenses, todayStr]);
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-background font-inter text-text-main pb-24">
             {/* Header */}
             <PageHeader
                 title="STATISTICS"
                 eyebrow="Business Overview"
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
             />
 
             <main className="flex-1 px-5 space-y-6 pt-6">

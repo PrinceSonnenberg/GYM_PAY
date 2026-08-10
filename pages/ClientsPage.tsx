@@ -135,12 +135,20 @@ const ClientsPage: React.FC = () => {
         return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-background font-inter text-text-main">
             <PageHeader
                 title={`CLIENTS (${clients.length})`}
                 eyebrow="Roster"
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
                 rightAction={
                     <button
                         onClick={() => {

@@ -56,11 +56,19 @@ const CalendarPage: React.FC = () => {
         setShowForm(false);
     };
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-background">
             <PageHeader
                 title="CALENDAR"
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
                 rightAction={
                     <button
                         onClick={() => setShowForm(v => !v)}

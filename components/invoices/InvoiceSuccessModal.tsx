@@ -167,15 +167,40 @@ export const InvoiceSuccessModal: React.FC<InvoiceSuccessModalProps> = ({
                         <span>{shareToast ? 'Link Copied!' : 'Share Link'}</span>
                     </button>
                 </div>
-                <button
-                    onClick={() => {
-                        onClose();
-                        navigate('/invoices');
-                    }}
-                    className="pt-2 text-xs font-bold text-text-muted hover:text-ink uppercase tracking-wider block w-full text-center"
-                >
-                    Return to Invoices List
-                </button>
+                <div className="pt-3 border-t border-border-light space-y-2">
+                    <button
+                        onClick={() => {
+                            onClose();
+                            navigate('/');
+                        }}
+                        className="w-full bg-ink text-white hover:bg-black py-3 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
+                    >
+                        <Icon name="home" className="text-base" />
+                        <span>Go to Main Dashboard</span>
+                    </button>
+
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                onClose();
+                                navigate('/invoices');
+                            }}
+                            className="flex-1 bg-background hover:bg-border-light border-2 border-border-light text-ink py-2.5 rounded-xl font-bold uppercase text-[11px] tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                            <Icon name="receipt_long" className="text-base" />
+                            <span>Invoices List</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setCreatedInvoice(null);
+                            }}
+                            className="flex-1 bg-background hover:bg-border-light border-2 border-border-light text-ink py-2.5 rounded-xl font-bold uppercase text-[11px] tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                            <Icon name="add" className="text-base" />
+                            <span>New Invoice</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </Modal>
     );

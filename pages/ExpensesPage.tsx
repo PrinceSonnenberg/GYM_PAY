@@ -61,12 +61,20 @@ const ExpensesPage: React.FC = () => {
         setReceiptImage(null);
     };
 
+    const handleBack = () => {
+        if (window.history.state && window.history.state.idx > 0) {
+            navigate(-1);
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <div className="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-background font-inter">
             <PageHeader
                 title="EXPENSES & RECEIPTS"
                 centered
-                onBack={() => navigate(-1)}
+                onBack={handleBack}
             />
 
             {/* Receipt Modal for Tax Filing */}

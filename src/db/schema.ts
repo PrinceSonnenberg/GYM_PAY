@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, real, integer, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, real, integer, jsonb, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table linked to Firebase Auth UID
@@ -20,6 +20,7 @@ export const clients = pgTable('clients', {
   avatarUrl: text('avatar_url'),
   status: text('status').notNull().default('New'), // 'On Track' | 'At Risk' | 'New'
   notes: text('notes'),
+  isArchived: boolean('is_archived').default(false),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

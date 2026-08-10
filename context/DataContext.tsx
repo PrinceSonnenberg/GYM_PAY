@@ -59,6 +59,8 @@ interface DataContextType {
     updateHomePreferences: (prefs: Partial<UserSettings["homePreferences"]>) => void;
     addClient: (name: string, email?: string, phone?: string, status?: 'On Track' | 'At Risk' | 'New') => Client;
     updateClient: (id: string, updates: Partial<Client>) => void;
+    archiveClient: (id: string) => void;
+    restoreClient: (id: string) => void;
     deleteClient: (id: string) => void;
     addInvoice: (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'overdue' }) => Invoice;
     markInvoicePaid: (id: string) => void;
@@ -364,6 +366,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
+    const archiveClient = (id: string) => {
+        updateClient(id, { isArchived: true });
+    };
+
+    const restoreClient = (id: string) => {
+        updateClient(id, { isArchived: false });
+    };
+
     const deleteClient = (id: string) => {
         setClients(prev => prev.filter(c => c.id !== id));
         apiFetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
@@ -488,6 +498,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 settings,
                 addClient,
                 updateClient,
+                archiveClient,
+                restoreClient,
                 deleteClient,
                 addInvoice,
                 markInvoicePaid,

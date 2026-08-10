@@ -59,6 +59,7 @@ export interface Client {
     avatarUrl?: string;
     status: 'On Track' | 'At Risk' | 'New';
     notes?: string;
+    isArchived?: boolean;
     createdAt?: string;
 }
 

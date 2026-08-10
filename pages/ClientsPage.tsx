@@ -27,8 +27,9 @@ const statusBadgeStyle: Record<string, string> = {
 const ClientsPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { clients, invoices, settings, addClient, updateClient, deleteClient, getClientSessions } = useData();
+    const { clients, invoices, settings, addClient, updateClient, archiveClient, restoreClient, deleteClient, getClientSessions } = useData();
     const [showForm, setShowForm] = useState(false);
+    const [viewTab, setViewTab] = useState<'active' | 'archived'>('active');
 
     useEffect(() => {
         if (location.search.includes('add=true')) {
@@ -111,7 +112,11 @@ const ClientsPage: React.FC = () => {
         setSelectedDetailClient(null);
     };
 
-    const filteredClients = clients.filter(c =>
+    const activeClients = clients.filter(c => !c.isArchived);
+    const archivedClients = clients.filter(c => !!c.isArchived);
+    const currentRoster = viewTab === 'active' ? activeClients : archivedClients;
+
+    const filteredClients = currentRoster.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (c.phone && c.phone.includes(searchQuery))
@@ -146,8 +151,8 @@ const ClientsPage: React.FC = () => {
     return (
         <div className="flex flex-col min-h-screen bg-background font-inter text-text-main">
             <PageHeader
-                title={`CLIENTS (${clients.length})`}
-                eyebrow="Roster"
+                title={viewTab === 'active' ? `CLIENTS (${activeClients.length})` : `ARCHIVED (${archivedClients.length})`}
+                eyebrow={viewTab === 'active' ? "Active Roster" : "Archived Clients"}
                 onBack={handleBack}
                 rightAction={
                     <button
@@ -183,6 +188,32 @@ const ClientsPage: React.FC = () => {
                     </div>
                 )}
             </PageHeader>
+
+            {/* Active vs Archived Tab Switcher */}
+            <div className="flex items-center gap-2 p-3 bg-white border-b-2 border-ink">
+                <button
+                    onClick={() => setViewTab('active')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+                        viewTab === 'active'
+                            ? 'bg-ink text-volt border-2 border-ink shadow-sm'
+                            : 'bg-background text-text-muted hover:text-ink border-2 border-transparent'
+                    }`}
+                >
+                    <Icon name="person" className="text-sm shrink-0" />
+                    <span>Active ({activeClients.length})</span>
+                </button>
+                <button
+                    onClick={() => setViewTab('archived')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+                        viewTab === 'archived'
+                            ? 'bg-amber-500 text-white border-2 border-amber-600 shadow-sm'
+                            : 'bg-background text-text-muted hover:text-ink border-2 border-transparent'
+                    }`}
+                >
+                    <Icon name="archive" className="text-sm shrink-0" />
+                    <span>Archived ({archivedClients.length})</span>
+                </button>
+            </div>
 
             {/* Add / Edit Form Modal */}
             {showForm && (
@@ -270,13 +301,16 @@ const ClientsPage: React.FC = () => {
                 </div>
             )}
 
-            {clients.length === 0 ? (
+            {currentRoster.length === 0 ? (
                 <main className="flex-1">
                     <EmptyState
-                        icon="groups"
-                        title="NO CLIENT ROSTER YET"
-                        description="Add your first client to manage goals and invoices cleanly."
-                        action={{ label: "Add a Client", icon: "person_add", onClick: () => setShowForm(true) }}
+                        icon={viewTab === 'active' ? 'groups' : 'archive'}
+                        title={viewTab === 'active' ? 'NO ACTIVE CLIENTS' : 'NO ARCHIVED CLIENTS'}
+                        description={viewTab === 'active' 
+                            ? 'Add your first client to manage goals and invoices cleanly.'
+                            : 'Archived clients will appear here. You can restore them to your active roster anytime.'
+                        }
+                        action={viewTab === 'active' ? { label: "Add a Client", icon: "person_add", onClick: () => setShowForm(true) } : undefined}
                     />
                 </main>
             ) : (
@@ -311,6 +345,11 @@ const ClientsPage: React.FC = () => {
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-bold text-base text-text-main truncate group-hover:text-primary transition-colors">{client.name}</p>
+                                                    {client.isArchived && (
+                                                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                                                            Archived
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <p className="text-xs text-text-muted truncate mt-0.5 font-medium">
                                                     {summary.count === 0 ? 'No invoices yet' : `${summary.count} invoice${summary.count > 1 ? 's' : ''} • ${summary.paidCount} paid`}
@@ -319,17 +358,42 @@ const ClientsPage: React.FC = () => {
                                         </div>
 
                                         <div className="flex items-center gap-1 shrink-0">
-                                            <button
-                                                onClick={(e) => startEditing(client, e)}
-                                                title="Edit Client"
-                                                className="p-2 rounded-xl text-text-muted hover:text-ink hover:bg-background transition-colors"
-                                            >
-                                                <Icon name="edit" className="text-[18px]" />
-                                            </button>
+                                            {!client.isArchived && (
+                                                <button
+                                                    onClick={(e) => startEditing(client, e)}
+                                                    title="Edit Client"
+                                                    className="p-2 rounded-xl text-text-muted hover:text-ink hover:bg-background transition-colors"
+                                                >
+                                                    <Icon name="edit" className="text-[18px]" />
+                                                </button>
+                                            )}
+                                            {!client.isArchived ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        archiveClient(client.id);
+                                                    }}
+                                                    title="Archive Client"
+                                                    className="p-2 rounded-xl text-amber-600 hover:text-amber-800 hover:bg-amber-50 transition-colors"
+                                                >
+                                                    <Icon name="archive" className="text-[18px]" />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        restoreClient(client.id);
+                                                    }}
+                                                    title="Restore Client"
+                                                    className="p-2 rounded-xl text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors"
+                                                >
+                                                    <Icon name="unarchive" className="text-[18px]" />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (confirm(`Remove ${client.name} from roster?`)) {
+                                                    if (confirm(`Remove ${client.name} permanently from roster?`)) {
                                                         deleteClient(client.id);
                                                     }
                                                 }}
@@ -341,29 +405,44 @@ const ClientsPage: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Actions Row - Single line buttons with whitespace-nowrap and exact padding */}
-                                    <div className="flex items-center gap-2 pt-2 border-t border-border-light">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/invoice/${client.id}`);
-                                            }}
-                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-background hover:bg-primary-soft hover:text-primary text-xs font-bold uppercase tracking-wider transition-colors border-2 border-ink text-ink whitespace-nowrap"
-                                        >
-                                            <Icon name="receipt" className="text-[16px] shrink-0" />
-                                            <span>Create Invoice</span>
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/clients/${client.id}/goals`);
-                                            }}
-                                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-background hover:bg-volt-soft hover:text-ink text-xs font-bold uppercase tracking-wider transition-colors border-2 border-ink text-ink whitespace-nowrap"
-                                        >
-                                            <Icon name="flag" className="text-[16px] shrink-0" />
-                                            <span>Goals</span>
-                                        </button>
-                                    </div>
+                                    {/* Actions Row */}
+                                    {!client.isArchived ? (
+                                        <div className="flex items-center gap-2 pt-2 border-t border-border-light">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/invoice/${client.id}`);
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-background hover:bg-primary-soft hover:text-primary text-xs font-bold uppercase tracking-wider transition-colors border-2 border-ink text-ink whitespace-nowrap"
+                                            >
+                                                <Icon name="receipt" className="text-[16px] shrink-0" />
+                                                <span>Create Invoice</span>
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/clients/${client.id}/goals`);
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-background hover:bg-volt-soft hover:text-ink text-xs font-bold uppercase tracking-wider transition-colors border-2 border-ink text-ink whitespace-nowrap"
+                                            >
+                                                <Icon name="flag" className="text-[16px] shrink-0" />
+                                                <span>Goals</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 pt-2 border-t border-border-light">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    restoreClient(client.id);
+                                                }}
+                                                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold uppercase tracking-wider transition-colors border-2 border-amber-600 shadow-sm"
+                                            >
+                                                <Icon name="unarchive" className="text-[16px] shrink-0" />
+                                                <span>Restore to Active Roster</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })
@@ -531,38 +610,65 @@ const ClientsPage: React.FC = () => {
                         })()}
 
                         {/* Actions in Modal */}
-                        <div className="space-y-2 pt-2">
-                            <button
-                                onClick={() => {
-                                    const id = selectedDetailClient.id;
-                                    setSelectedDetailClient(null);
-                                    navigate(`/invoice/${id}`);
-                                }}
-                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wider hover:bg-primary-hover transition-colors shadow-sm"
-                            >
-                                <Icon name="receipt" className="text-[18px]" />
-                                <span>Create New Invoice</span>
-                            </button>
-                            <div className="flex gap-2">
+                        <div className="space-y-2 pt-2 border-t border-border-light">
+                            {!selectedDetailClient.isArchived ? (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            const id = selectedDetailClient.id;
+                                            setSelectedDetailClient(null);
+                                            navigate(`/invoice/${id}`);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wider hover:bg-primary-hover transition-colors shadow-sm"
+                                    >
+                                        <Icon name="receipt" className="text-[18px]" />
+                                        <span>Create New Invoice</span>
+                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const id = selectedDetailClient.id;
+                                                setSelectedDetailClient(null);
+                                                navigate(`/clients/${id}/goals`);
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-background transition-colors text-ink"
+                                        >
+                                            <Icon name="flag" className="text-[16px]" />
+                                            <span>Goals</span>
+                                        </button>
+                                        <button
+                                            onClick={(e) => startEditing(selectedDetailClient, e)}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-background transition-colors text-ink"
+                                        >
+                                            <Icon name="edit" className="text-[16px]" />
+                                            <span>Edit Info</span>
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const id = selectedDetailClient.id;
+                                            archiveClient(id);
+                                            setSelectedDetailClient(null);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-amber-500 text-amber-700 font-bold uppercase text-xs tracking-wider hover:bg-amber-50 transition-colors"
+                                    >
+                                        <Icon name="archive" className="text-[18px]" />
+                                        <span>Archive Client</span>
+                                    </button>
+                                </>
+                            ) : (
                                 <button
                                     onClick={() => {
                                         const id = selectedDetailClient.id;
+                                        restoreClient(id);
                                         setSelectedDetailClient(null);
-                                        navigate(`/clients/${id}/goals`);
                                     }}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-background transition-colors text-ink"
+                                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 text-white font-bold uppercase text-xs tracking-wider hover:bg-amber-600 transition-colors shadow-sm"
                                 >
-                                    <Icon name="flag" className="text-[16px]" />
-                                    <span>Goals</span>
+                                    <Icon name="unarchive" className="text-[18px]" />
+                                    <span>Restore Client to Active Roster</span>
                                 </button>
-                                <button
-                                    onClick={(e) => startEditing(selectedDetailClient, e)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-background transition-colors text-ink"
-                                >
-                                    <Icon name="edit" className="text-[16px]" />
-                                    <span>Edit Info</span>
-                                </button>
-                            </div>
+                            )}
                         </div>
                     </div>
                 )}

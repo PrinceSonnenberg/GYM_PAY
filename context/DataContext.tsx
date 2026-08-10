@@ -363,18 +363,42 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const updateClient = (id: string, updates: Partial<Client>) => {
+        let previousClient: Client | undefined;
         setClients(prev => {
-            const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
-            const target = updated.find(c => c.id === id);
-            if (target) {
-                apiFetch(`/api/clients/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(target),
-                }).catch(err => console.error('Cloud SQL sync error:', err));
-            }
-            return updated;
+            previousClient = prev.find(c => c.id === id);
+            return prev.map(c => c.id === id ? { ...c, ...updates } : c);
         });
+
+        // Use a slight timeout to ensure the state has updated locally before making the request
+        setTimeout(() => {
+            setClients(current => {
+                const target = current.find(c => c.id === id);
+                if (target) {
+                    apiFetch(`/api/clients/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(target),
+                    }).then(async res => {
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            console.error('Cloud SQL sync error:', errData);
+                            // Revert on error
+                            if (previousClient) {
+                                setClients(c => c.map(item => item.id === id ? previousClient! : item));
+                            }
+                            alert(`Failed to save client: ${errData.error || 'Unknown error'}`);
+                        }
+                    }).catch(err => {
+                        console.error('Cloud SQL sync error:', err);
+                        // Revert on error
+                        if (previousClient) {
+                            setClients(c => c.map(item => item.id === id ? previousClient! : item));
+                        }
+                    });
+                }
+                return current;
+            });
+        }, 0);
     };
 
     const archiveClient = (id: string) => {

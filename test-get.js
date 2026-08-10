@@ -1,0 +1,1 @@
+fetch('http://localhost:3000/api/settings').then(r=>r.text()).then(console.log).catch(console.error)

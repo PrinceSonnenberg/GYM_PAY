@@ -54,10 +54,10 @@ export function validateClient(input: ClientInput): string[] {
     const isSouthAfricanLocal = /^0[1-8]\d{8}$/.test(cleaned);
     const isSouthAfricanIntlNoPlus = /^27[1-8]\d{8}$/.test(cleaned);
     const isInternational = /^\+[1-9]\d{6,14}$/.test(cleaned);
-    const isBasicTenDigit = /^\d{10}$/.test(cleaned);
+    const isBasicTenDigit = /^\d{7,15}$/.test(cleaned);
 
     if (!isSouthAfricanLocal && !isSouthAfricanIntlNoPlus && !isInternational && !isBasicTenDigit) {
-      errors.push('Phone number must be a valid South African number, international format, or a standard 10-digit number.');
+      errors.push('Phone number must be a valid South African number, international format, or a standard 7-15 digit number.');
     }
   }
   

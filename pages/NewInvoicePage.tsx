@@ -31,7 +31,12 @@ const NewInvoicePage: React.FC = () => {
 
     const currency = settings.invoiceDefaults.currency;
 
-    const [clientId, setClientId] = useState<string>(routeClientId || (clients[0]?.id || ''));
+    const activeClients = useMemo(
+        () => clients.filter(c => !c.isArchived && (c as any).is_archived !== true && c.status !== 'Archived'),
+        [clients]
+    );
+
+    const [clientId, setClientId] = useState<string>(routeClientId || (activeClients[0]?.id || ''));
     const [issuedDate, setIssuedDate] = useState(todayISO());
     const [dueDate, setDueDate] = useState(plusDaysISO(settings.invoiceDefaults.defaultDueDays || 14));
     
@@ -72,12 +77,12 @@ const NewInvoicePage: React.FC = () => {
     const [showPdfView, setShowPdfView] = useState(false);
     const [shareToast, setShareToast] = useState(false);
 
-    // Keep clientId synced if routeClientId changes or clients loaded
+    // Keep clientId synced if routeClientId changes or activeClients loaded
     useEffect(() => {
-        if (!clientId && clients.length > 0) {
-            setClientId(clients[0].id);
+        if ((!clientId || !activeClients.some(c => c.id === clientId)) && activeClients.length > 0) {
+            setClientId(activeClients[0].id);
         }
-    }, [clients, clientId]);
+    }, [activeClients, clientId]);
 
     const selectedClient = clients.find(c => c.id === clientId);
 
@@ -286,7 +291,7 @@ const NewInvoicePage: React.FC = () => {
                             style={{ appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2314161f\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                         >
                             <option value="" disabled>-- Select Client --</option>
-                            {clients.filter(c => !c.isArchived).map(c => (
+                            {activeClients.map(c => (
                                 <option key={c.id} value={c.id}>
                                     {c.name} {c.email ? `(${c.email})` : ''}
                                 </option>

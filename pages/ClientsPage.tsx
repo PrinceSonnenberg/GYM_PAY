@@ -112,8 +112,8 @@ const ClientsPage: React.FC = () => {
         setSelectedDetailClient(null);
     };
 
-    const activeClients = clients.filter(c => !c.isArchived);
-    const archivedClients = clients.filter(c => !!c.isArchived);
+    const activeClients = clients.filter(c => !c.isArchived && (c as any).is_archived !== true && c.status !== 'Archived');
+    const archivedClients = clients.filter(c => Boolean(c.isArchived || (c as any).is_archived || c.status === 'Archived'));
     const currentRoster = viewTab === 'active' ? activeClients : archivedClients;
 
     const filteredClients = currentRoster.filter(c =>

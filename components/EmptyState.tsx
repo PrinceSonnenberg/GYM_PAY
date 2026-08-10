@@ -17,21 +17,21 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   action,
 }) => {
   return (
-    <div className="flex flex-1 h-full flex-col items-center justify-center py-12 px-8 text-center">
-      <div className={`plate flex size-20 items-center justify-center mb-5 border-2 border-ink ${iconBg}`}>
-        <Icon name={icon} className="text-4xl" />
+    <div className="flex flex-col items-center justify-center py-4 px-4 text-center">
+      <div className={`plate flex size-14 items-center justify-center mb-3 border-2 border-ink ${iconBg}`}>
+        <Icon name={icon} className="text-2xl" />
       </div>
-      <h2 className="font-display text-lg tracking-wide text-text-main mb-1">
+      <h2 className="font-display text-base tracking-wide text-text-main mb-0.5">
         {title}
       </h2>
       {description && (
-        <p className="mt-2 mb-4 max-w-[250px] text-sm text-text-muted">
+        <p className="mt-1 mb-3 max-w-[250px] text-xs text-text-muted">
           {description}
         </p>
       )}
       {action && (
-        <button onClick={action.onClick} className={`flex items-center gap-2 rounded-full bg-primary text-white border-2 border-ink px-6 py-3 font-bold uppercase text-sm tracking-wide shadow-pop transition-all active:translate-y-1.5 active:shadow-none ${!description ? 'mt-3' : ''}`}>
-          {action.icon && <Icon name={action.icon} className="text-[20px]" />}
+        <button onClick={action.onClick} className={`flex items-center gap-2 rounded-full bg-primary text-white border-2 border-ink px-5 py-2.5 font-bold uppercase text-xs tracking-wide shadow-pop transition-all active:translate-y-1.5 active:shadow-none ${!description ? 'mt-2' : ''}`}>
+          {action.icon && <Icon name={action.icon} className="text-[18px]" />}
           {action.label}
         </button>
       )}

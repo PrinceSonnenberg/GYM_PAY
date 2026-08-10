@@ -214,7 +214,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const clientsRes = await apiFetch('/api/clients');
                 if (clientsRes.ok) {
                     const clientsData = await clientsRes.json();
-                    if (clientsData) setClients(clientsData);
+                    if (Array.isArray(clientsData)) {
+                        setClients(clientsData.map((c: any) => ({
+                            ...c,
+                            isArchived: Boolean(c.isArchived || c.is_archived || c.status === 'Archived')
+                        })));
+                    }
                 }
 
                 // Fetch invoices list
@@ -373,11 +378,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const archiveClient = (id: string) => {
-        updateClient(id, { isArchived: true });
+        updateClient(id, { isArchived: true, status: 'Archived' as any });
     };
 
     const restoreClient = (id: string) => {
-        updateClient(id, { isArchived: false });
+        updateClient(id, { isArchived: false, status: 'New' });
     };
 
     const deleteClient = (id: string) => {

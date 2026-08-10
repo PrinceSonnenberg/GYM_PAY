@@ -360,12 +360,14 @@ const HomePage: React.FC = () => {
                 )}
                 {(settings.homePreferences?.showSchedule ?? true) && (
                 <section>
-                    <div className="mb-4 flex items-center justify-between px-1">
+                    <div className="mb-3 flex items-center justify-between px-1">
                         <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">Today's Schedule</h3>
-                        <a className="text-xs font-bold text-primary hover:text-primary-hover transition-colors uppercase tracking-wide" href="#/calendar">View All</a>
+                        {activeTodaySessions.length > 0 && (
+                            <a className="text-xs font-bold text-primary hover:text-primary-hover transition-colors uppercase tracking-wide" href="#/calendar">View All</a>
+                        )}
                     </div>
                     {activeTodaySessions.length === 0 ? (
-                        <p className="text-center text-text-muted text-sm py-6 bg-white rounded-2xl border-2 border-ink">Nothing booked for today.</p>
+                        <p className="text-center text-text-muted text-xs font-medium py-3 px-4 bg-white rounded-xl border-2 border-ink">Nothing booked for today.</p>
                     ) : (
                         <div className="space-y-3">
                             {activeTodaySessions.map((session) => (

@@ -227,43 +227,43 @@ const HomePage: React.FC = () => {
                     )}
                 </button>
             </header>
-            <main className="flex-1 px-5 space-y-6 pt-6 pb-28">
+            <main className="flex-1 px-5 space-y-4 pt-4 pb-28">
                 
                 {(settings.homePreferences?.showRevenue ?? true) && (
-                <section className="grid grid-cols-2 gap-4">
-                    <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-3 bg-ink p-5 text-white cursor-pointer hover:opacity-95 transition-opacity">
-                        <div className="flex items-center gap-2 text-white/60">
-                            <Icon name="payments" className="text-[18px]" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest">Revenue</p>
+                <section className="grid grid-cols-2 gap-3">
+                    <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-2 bg-ink p-3.5 text-white cursor-pointer hover:opacity-95 transition-opacity">
+                        <div className="flex items-center gap-1.5 text-white/60">
+                            <Icon name="payments" className="text-[16px]" />
+                            <p className="text-[9px] font-bold uppercase tracking-widest">Revenue</p>
                         </div>
                         <div>
-                            <p className="font-display text-3xl tracking-wide">{formatCurrency(revenue)}</p>
-                            <div className="flex items-center gap-1 mt-1">
-                                <Icon name="trending_up" className="text-[15px] text-volt" />
-                                <span className="text-xs font-bold text-volt">{paidInvoices.length} PAID INVOICE{paidInvoices.length === 1 ? '' : 'S'}</span>
+                            <p className="font-display text-2xl tracking-wide">{formatCurrency(revenue)}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <Icon name="trending_up" className="text-[13px] text-volt" />
+                                <span className="text-[10px] font-bold text-volt">{paidInvoices.length} PAID INVOICE{paidInvoices.length === 1 ? '' : 'S'}</span>
                             </div>
                         </div>
                     </div>
-                    <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-3 bg-primary p-5 text-white cursor-pointer hover:opacity-95 transition-opacity">
-                        <div className="flex items-center gap-2 text-white/70">
-                            <Icon name="pending_actions" className="text-[18px]" />
-                            <p className="text-[10px] font-bold uppercase tracking-widest">Pending</p>
+                    <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-2 bg-primary p-3.5 text-white cursor-pointer hover:opacity-95 transition-opacity">
+                        <div className="flex items-center gap-1.5 text-white/70">
+                            <Icon name="pending_actions" className="text-[16px]" />
+                            <p className="text-[9px] font-bold uppercase tracking-widest">Pending</p>
                         </div>
                         <div>
-                            <p className="font-display text-3xl tracking-wide">{formatCurrency(pending)}</p>
-                            <div className="flex items-center gap-1 mt-1">
-                                <Icon name="error" className="text-[15px]" />
-                                <span className="text-xs font-bold">{pendingInvoices.length} INVOICE{pendingInvoices.length === 1 ? '' : 'S'}</span>
+                            <p className="font-display text-2xl tracking-wide">{formatCurrency(pending)}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <Icon name="error" className="text-[13px]" />
+                                <span className="text-[10px] font-bold">{pendingInvoices.length} INVOICE{pendingInvoices.length === 1 ? '' : 'S'}</span>
                             </div>
                         </div>
                     </div>
                 </section>
                 )}
                 {(settings.homePreferences?.showIncomeTrend ?? true) && (
-                <section className="plate bg-surface p-6 border-2 border-ink">
-                    <div className="mb-6 flex flex-col gap-2">
-                        <div className="flex items-start justify-between gap-4">
-                            <h3 className="font-display text-xl tracking-wide uppercase leading-none text-ink pt-1">
+                <section className="plate bg-surface p-4 border-2 border-ink">
+                    <div className="mb-3 flex flex-col gap-1">
+                        <div className="flex items-center justify-between gap-3">
+                            <h3 className="font-display text-lg tracking-wide uppercase leading-none text-ink">
                                 INCOME TREND
                             </h3>
                             <div className="relative shrink-0">
@@ -273,31 +273,31 @@ const HomePage: React.FC = () => {
                                         setTrendPeriod(e.target.value as any);
                                         setHoveredPoint(null);
                                     }}
-                                    className="appearance-none bg-background border-2 border-ink rounded-xl py-1.5 pl-3 pr-8 text-xs font-bold uppercase tracking-wide focus:outline-none cursor-pointer hover:bg-white transition-colors"
+                                    className="appearance-none bg-background border-2 border-ink rounded-lg py-1 pl-2.5 pr-7 text-[11px] font-bold uppercase tracking-wide focus:outline-none cursor-pointer hover:bg-white transition-colors"
                                 >
                                     <option value="This Month">This Month</option>
                                     <option value="Last Month">Last Month</option>
                                     <option value="Yearly">Yearly</option>
                                 </select>
-                                <Icon name="expand_more" className="absolute right-2 top-2 text-[18px] pointer-events-none text-ink" />
+                                <Icon name="expand_more" className="absolute right-1.5 top-1.5 text-[16px] pointer-events-none text-ink" />
                             </div>
                         </div>
-                        <div>
-                            <button onClick={() => navigate('/statistics')} className="text-[16px] font-bold uppercase tracking-widest text-primary hover:text-primary-hover transition-colors flex items-center gap-0.5 mb-1">
-                                Stats <Icon name="chevron_right" className="text-[18px]" />
+                        <div className="flex items-center justify-between mt-1">
+                            <button onClick={() => navigate('/statistics')} className="text-[13px] font-bold uppercase tracking-widest text-primary hover:text-primary-hover transition-colors flex items-center gap-0.5">
+                                Stats <Icon name="chevron_right" className="text-[16px]" />
                             </button>
-                            <p className="text-sm font-bold text-text-muted">{formatCurrency(trendData.total)} total in period</p>
+                            <p className="text-xs font-bold text-text-muted">{formatCurrency(trendData.total)} total in period</p>
                         </div>
                     </div>
 
                     {hoveredPoint !== null && (
-                        <div className="mb-3 px-3 py-1.5 rounded-xl bg-ink text-volt text-xs font-bold flex items-center justify-between animate-fadeIn">
+                        <div className="mb-2 px-2.5 py-1 rounded-lg bg-ink text-volt text-[11px] font-bold flex items-center justify-between animate-fadeIn">
                             <span>{points[hoveredPoint].label}:</span>
-                            <span className="font-mono text-sm">{formatCurrency(points[hoveredPoint].val)}</span>
+                            <span className="font-mono text-xs">{formatCurrency(points[hoveredPoint].val)}</span>
                         </div>
                     )}
 
-                    <div className="relative h-32 w-full pt-2">
+                    <div className="relative h-20 w-full pt-1">
                         <svg className="h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 50">
                             <defs>
                                 <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
@@ -326,12 +326,12 @@ const HomePage: React.FC = () => {
                         </svg>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-4 gap-1 px-1 text-center">
+                    <div className="mt-2 grid grid-cols-4 gap-1 px-1 text-center">
                         {trendData.labels.map((lbl, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setHoveredPoint(idx)}
-                                className={`text-[9px] font-bold uppercase tracking-wider py-1 rounded-md transition-colors ${hoveredPoint === idx ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'}`}
+                                className={`text-[9px] font-bold uppercase tracking-wider py-0.5 rounded-md transition-colors ${hoveredPoint === idx ? 'bg-primary text-white' : 'text-text-muted hover:text-text-main'}`}
                             >
                                 {lbl}
                             </button>

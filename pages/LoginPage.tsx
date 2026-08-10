@@ -75,10 +75,10 @@ const LoginPage: React.FC = () => {
             {/* Gradient overlay: transparent at top, solid ink at the bottom where the card sits */}
             <div className="absolute inset-0 z-[1] bg-gradient-to-b from-ink/10 via-ink/20 to-ink" />
 
-            {/* Logo, overlaid directly on the photo near the top */}
-            <div className="absolute top-12 left-0 right-0 z-10 text-center px-5">
+            {/* Logo, overlaid directly on the photo lower down */}
+            <div className="absolute top-28 left-0 right-0 z-10 text-center px-5">
                 <h1 className="font-display text-4xl text-white tracking-wide drop-shadow-md">GYMPAY</h1>
-                <p className="text-xs font-bold uppercase tracking-widest text-white/80 mt-2 drop-shadow-md">
+                <p className="text-[15px] font-bold uppercase tracking-widest text-white/90 mt-2 drop-shadow-md">
                     Invoicing done in 3,2,1
                 </p>
             </div>

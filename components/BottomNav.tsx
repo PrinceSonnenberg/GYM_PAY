@@ -117,7 +117,7 @@ const BottomNav: React.FC = () => {
                 </div>
             )}
 
-            <nav className="fixed bottom-0 z-40 w-full max-w-md border-t-2 border-ink bg-white/95 pb-safe pt-1.5 backdrop-blur-xl shadow-lg">
+            <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-md border-t-2 border-ink bg-white/95 pb-safe pt-1.5 backdrop-blur-xl shadow-lg">
                 <div className="grid grid-cols-5 items-center justify-items-center h-[58px] pb-1">
                     <NavItem to="/" icon="grid_view" label="Home" />
                     <NavItem to="/clients" icon="groups" label="Clients" />

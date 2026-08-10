@@ -60,7 +60,7 @@ interface DataContextType {
     addClient: (name: string, email?: string, phone?: string, status?: 'On Track' | 'At Risk' | 'New') => Client;
     updateClient: (id: string, updates: Partial<Client>) => void;
     deleteClient: (id: string) => void;
-    addInvoice: (invoice: Omit<Invoice, 'id' | 'status'>) => Invoice;
+    addInvoice: (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'overdue' }) => Invoice;
     markInvoicePaid: (id: string) => void;
     sendInvoiceReminder: (id: string) => Promise<void>;
     deleteInvoice: (id: string) => void;
@@ -147,9 +147,21 @@ const loadLocal = <T,>(key: string, fallback: T): T => {
     }
 };
 
+const getInvoiceTotalAmount = (inv: Partial<Invoice>): number => {
+    if (!inv || !Array.isArray(inv.items) || inv.items.length === 0) return 0;
+    const sub = inv.items.reduce((sum, item) => {
+        const amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? 0));
+        return sum + (Number.isNaN(amt) ? 0 : amt);
+    }, 0);
+    const tax = typeof inv.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv.taxRate ?? 0)) || 0;
+    return sub + sub * tax;
+};
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [clients, setClients] = useState<Client[]>(() => loadLocal('app_clients', seedClients));
-    const [invoices, setInvoices] = useState<Invoice[]>(() => loadLocal('app_invoices', seedInvoices));
+    const [invoices, setInvoices] = useState<Invoice[]>(() => 
+        loadLocal<Invoice[]>('app_invoices', seedInvoices).filter(inv => getInvoiceTotalAmount(inv) > 0)
+    );
     const [expenses, setExpenses] = useState<ExpenseItem[]>(() => loadLocal('app_expenses', seedExpenses));
     const [goals, setGoals] = useState<ActiveGoal[]>(() => loadLocal('app_goals', seedGoals));
     const [sessions, setSessions] = useState<Session[]>(() => loadLocal('app_sessions', seedSessions));
@@ -207,7 +219,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const invoicesRes = await apiFetch('/api/invoices');
                 if (invoicesRes.ok) {
                     const invoicesData = await invoicesRes.json();
-                    if (invoicesData) setInvoices(invoicesData);
+                    if (Array.isArray(invoicesData)) {
+                        setInvoices(invoicesData.filter(inv => getInvoiceTotalAmount(inv) > 0));
+                    }
                 }
 
                 // Fetch client goals
@@ -355,9 +369,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         apiFetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
-    const addInvoice = (invoice: Omit<Invoice, 'id' | 'status'>): Invoice => {
-        const newInv: Invoice = { ...invoice, id: crypto.randomUUID(), status: 'sent' };
-        setInvoices(prev => [newInv, ...prev]);
+    const addInvoice = (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'overdue' }): Invoice => {
+        const newInv: Invoice = { status: invoice.status || 'sent', ...invoice, id: crypto.randomUUID() };
+        if (getInvoiceTotalAmount(newInv) <= 0) {
+            throw new Error("Invoice total must be greater than zero.");
+        }
+        setInvoices(prev => [newInv, ...prev].filter(inv => getInvoiceTotalAmount(inv) > 0));
         apiFetch('/api/invoices', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -367,12 +384,21 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const markInvoicePaid = (id: string) => {
-        setInvoices(prev => prev.map(inv => (inv.id === id ? { ...inv, status: 'paid' } : inv)));
-        apiFetch(`/api/invoices/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'paid' }),
-        }).catch(err => console.error('Cloud SQL sync error:', err));
+        let updatedInvoice: Invoice | null = null;
+        setInvoices(prev => prev.map(inv => {
+            if (inv.id === id) {
+                updatedInvoice = { ...inv, status: 'paid' };
+                return updatedInvoice;
+            }
+            return inv;
+        }));
+        if (updatedInvoice) {
+            apiFetch(`/api/invoices/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedInvoice),
+            }).catch(err => console.error('Cloud SQL sync error (mark invoice paid):', err));
+        }
     };
 
     const sendInvoiceReminder = async (id: string): Promise<void> => {

@@ -70,7 +70,7 @@ const ExpensesPage: React.FC = () => {
     };
 
     return (
-        <div className="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-background font-inter">
+        <div className="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-background font-inter pb-24">
             <PageHeader
                 title="EXPENSES & RECEIPTS"
                 centered
@@ -260,7 +260,6 @@ const ExpensesPage: React.FC = () => {
                     ))}
                 </div>
             </main>
-            <BottomNav />
         </div>
     );
 };

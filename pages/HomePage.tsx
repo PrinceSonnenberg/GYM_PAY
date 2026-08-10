@@ -1,23 +1,78 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icon';
 import AttendanceBadge from '../components/AttendanceBadge';
 import AttendanceModal from '../components/AttendanceModal';
 import NotificationsModal from '../components/NotificationsModal';
+import Modal from '../components/Modal';
 import { useData } from '../context/DataContext';
 import { formatCurrency, invoiceSubtotal } from '../utils/format';
-import { Session } from '../types';
+import { Session, Invoice } from '../types';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
-    const { invoices, expenses, clients, getSessionsForDate, settings } = useData();
+    const { invoices, expenses, clients, getSessionsForDate, settings, markInvoicePaid, sendInvoiceReminder } = useData();
     const [activeAttendanceSession, setActiveAttendanceSession] = useState<Session | null>(null);
     const [showNotifications, setShowNotifications] = useState(false);
     const [trendPeriod, setTrendPeriod] = useState<'This Month' | 'Last Month' | 'Yearly'>('This Month');
     const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+
+    // Pending Invoice Action Modal State
+    const [selectedPendingInvoice, setSelectedPendingInvoice] = useState<Invoice | null>(null);
+    const [actionToast, setActionToast] = useState<string | null>(null);
+    const [isSendingReminder, setIsSendingReminder] = useState(false);
+
+    const pressTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const isLongPressRef = useRef<boolean>(false);
+
+    const handlePressStart = (inv: Invoice) => {
+        isLongPressRef.current = false;
+        if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+        pressTimerRef.current = setTimeout(() => {
+            isLongPressRef.current = true;
+            setSelectedPendingInvoice(inv);
+        }, 400);
+    };
+
+    const handlePressEnd = () => {
+        if (pressTimerRef.current) {
+            clearTimeout(pressTimerRef.current);
+            pressTimerRef.current = null;
+        }
+    };
+
+    const handleInvoiceClick = (inv: Invoice) => {
+        if (isLongPressRef.current) {
+            isLongPressRef.current = false;
+            return;
+        }
+        setSelectedPendingInvoice(inv);
+    };
+
+    const handleMarkAsPaid = (invId: string) => {
+        markInvoicePaid(invId);
+        setActionToast('Invoice marked as paid! Added to Revenue.');
+        setSelectedPendingInvoice(null);
+        setTimeout(() => setActionToast(null), 3500);
+    };
+
+    const handleSendReminder = async (invId: string) => {
+        setIsSendingReminder(true);
+        try {
+            await sendInvoiceReminder(invId);
+            setActionToast('Payment reminder sent to client!');
+            setSelectedPendingInvoice(null);
+            setTimeout(() => setActionToast(null), 3500);
+        } catch (err: any) {
+            setActionToast(err.message || 'Failed to send reminder.');
+            setTimeout(() => setActionToast(null), 3500);
+        } finally {
+            setIsSendingReminder(false);
+        }
+    };
 
     const allTodaySessions = getSessionsForDate(todayISO());
     // Filter active today sessions: default is scheduled; if marked as attended, it drops off
@@ -30,8 +85,9 @@ const HomePage: React.FC = () => {
         const total = subtotal + subtotal * taxRate;
         return Number.isNaN(total) ? 0 : total;
     };
-    const paidInvoices = invoices.filter(i => i.status === 'paid');
-    const pendingInvoices = invoices.filter(i => i.status === 'sent');
+    const paidInvoices = invoices.filter(i => i.status === 'paid' && invoiceTotal(i) > 0);
+    const pendingInvoices = invoices.filter(i => i.status === 'sent' && invoiceTotal(i) > 0);
+    const hasPendingInvoices: boolean = pendingInvoices.length >= 1;
     const revenue = paidInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
     const pending = pendingInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
     const recentExpenses = expenses.slice(0, 2);
@@ -367,25 +423,117 @@ const HomePage: React.FC = () => {
                 </section>
                 )}
                 
-                {(settings.homePreferences?.showPendingInvoices ?? true) && pendingInvoices.length > 0 && (
+                {(settings.homePreferences?.showPendingInvoices ?? true) && hasPendingInvoices && (
                 <section>
                         <div className="mb-4 flex items-center justify-between px-1">
                             <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">Pending Invoices</h3>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                                <Icon name="touch_app" className="text-xs" />
+                                Tap to Manage
+                            </span>
                         </div>
                         <div className="overflow-hidden rounded-2xl bg-white border-2 border-ink">
                             {pendingInvoices.map((inv, index) => (
-                                <div key={inv.id} className={`flex items-center justify-between p-5 ${index < pendingInvoices.length - 1 ? 'border-b-2 border-border-light' : ''}`}>
+                                <div 
+                                    key={inv.id} 
+                                    onTouchStart={() => handlePressStart(inv)}
+                                    onTouchEnd={handlePressEnd}
+                                    onMouseDown={() => handlePressStart(inv)}
+                                    onMouseUp={handlePressEnd}
+                                    onMouseLeave={handlePressEnd}
+                                    onClick={() => handleInvoiceClick(inv)}
+                                    className={`flex items-center justify-between p-5 cursor-pointer hover:bg-primary-soft/30 transition-all active:bg-primary-soft/60 select-none ${index < pendingInvoices.length - 1 ? 'border-b-2 border-border-light' : ''}`}
+                                >
                                     <div>
-                                        <p className="text-sm font-bold text-text-main">{clientName(inv.clientId)}</p>
-                                        <p className="text-xs font-medium text-text-muted">Due {inv.dueDate}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-bold text-text-main">{clientName(inv.clientId)}</p>
+                                            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary-soft text-primary border border-primary/20">Sent</span>
+                                        </div>
+                                        <p className="text-xs font-medium text-text-muted mt-0.5">Due {inv.dueDate}</p>
                                     </div>
-                                    <span className="font-mono font-bold text-primary">{formatCurrency(invoiceTotal(inv))}</span>
+                                    <span className="font-mono font-bold text-primary text-base">{formatCurrency(invoiceTotal(inv))}</span>
                                 </div>
                             ))}
                         </div>
                     </section>
                 )}
             </main>
+
+            {/* Action Notification Toast */}
+            {actionToast && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-[88vw] px-3 py-1.5 rounded-xl bg-ink text-volt font-bold text-[9px] uppercase tracking-wider border border-volt shadow-lg flex items-center gap-1.5 animate-bounce">
+                    <Icon name="check_circle" className="text-sm shrink-0" />
+                    <span className="truncate">{actionToast}</span>
+                </div>
+            )}
+
+            {/* Pending Invoice Action Modal */}
+            <Modal open={!!selectedPendingInvoice} onClose={() => setSelectedPendingInvoice(null)}>
+                {selectedPendingInvoice && (
+                    <div className="flex flex-col">
+                        <div className="bg-ink p-5 text-white flex justify-between items-center border-b-2 border-ink">
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-volt">Manage Invoice</p>
+                                <h3 className="font-display text-lg tracking-wide">{clientName(selectedPendingInvoice.clientId)}</h3>
+                                <p className="text-xs text-white/60">Due {selectedPendingInvoice.dueDate}</p>
+                            </div>
+                            <button onClick={() => setSelectedPendingInvoice(null)} className="text-white/70 hover:text-white p-1">
+                                <Icon name="close" />
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-4">
+                            <div className="p-4 rounded-xl bg-background border-2 border-ink flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold text-text-muted">Total Amount</p>
+                                    <p className="font-mono text-xl font-bold text-primary">{formatCurrency(invoiceTotal(selectedPendingInvoice))}</p>
+                                </div>
+                                <span className="text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full bg-primary-soft text-primary border border-primary/20">
+                                    {selectedPendingInvoice.status}
+                                </span>
+                            </div>
+
+                            <p className="text-xs text-text-muted font-medium text-center">
+                                Quick Invoice Actions
+                            </p>
+
+                            <div className="space-y-2.5">
+                                <button
+                                    type="button"
+                                    onClick={() => handleMarkAsPaid(selectedPendingInvoice.id)}
+                                    className="w-full py-3.5 px-4 rounded-xl bg-volt text-ink border-2 border-ink font-bold uppercase text-xs tracking-wider hover:bg-volt/80 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
+                                >
+                                    <Icon name="payments" className="text-lg" />
+                                    <span>Mark as Paid</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => handleSendReminder(selectedPendingInvoice.id)}
+                                    disabled={isSendingReminder}
+                                    className="w-full py-3 px-4 rounded-xl bg-white text-ink border-2 border-ink font-bold uppercase text-xs tracking-wider hover:bg-background transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                                >
+                                    <Icon name="mail" className="text-lg text-primary" />
+                                    <span>{isSendingReminder ? 'Sending...' : 'Send Reminder'}</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const id = selectedPendingInvoice.id;
+                                        setSelectedPendingInvoice(null);
+                                        navigate(`/invoices?id=${id}`);
+                                    }}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-background text-text-muted hover:text-ink font-bold uppercase text-xs tracking-wider transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="visibility" className="text-lg" />
+                                    <span>View Invoice Details</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
 
             <AttendanceModal
                 session={activeAttendanceSession}

@@ -43,12 +43,13 @@ const InvoicesPage: React.FC = () => {
     };
 
     const filteredInvoices = invoices.filter(inv => {
+        if (calcTotal(inv) <= 0) return false;
         if (filter === 'all') return true;
         return inv.status === filter;
     });
 
-    const totalPaid = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + calcTotal(i), 0);
-    const totalPending = invoices.filter(i => i.status === 'sent').reduce((sum, i) => sum + calcTotal(i), 0);
+    const totalPaid = invoices.filter(i => i.status === 'paid' && calcTotal(i) > 0).reduce((sum, i) => sum + calcTotal(i), 0);
+    const totalPending = invoices.filter(i => i.status === 'sent' && calcTotal(i) > 0).reduce((sum, i) => sum + calcTotal(i), 0);
     
     const billedThisMonth = invoices.reduce((sum, inv) => {
         const d = new Date(inv.issuedDate || inv.dueDate || now);
@@ -69,7 +70,7 @@ const InvoicesPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-background font-inter text-text-main">
+        <div className="flex flex-col min-h-screen bg-background font-inter text-text-main pb-24">
             <PageHeader
                 title="INVOICES"
                 eyebrow="Billing Overview"
@@ -496,8 +497,6 @@ const InvoicesPage: React.FC = () => {
                     </div>
                 )}
             </main>
-
-            <BottomNav />
         </div>
     );
 };

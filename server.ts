@@ -93,7 +93,17 @@ async function startServer() {
       const uid = req.user?.uid || "default-user";
       const { id } = req.params;
 
-      const clientErrors = validateClient(req.body);
+      const [existingClient] = await db
+        .select()
+        .from(clients)
+        .where(and(eq(clients.id, id as string), eq(clients.userId, uid)));
+
+      if (!existingClient) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const mergedClient = { ...existingClient, ...req.body };
+      const clientErrors = validateClient(mergedClient);
       if (clientErrors.length > 0) {
         return res.status(400).json({ error: clientErrors[0], errors: clientErrors });
       }
@@ -128,7 +138,15 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       const result = await db.select().from(invoices).where(eq(invoices.userId, uid));
-      res.json(result);
+      const validInvoices = result.filter((inv: any) => {
+        const items = Array.isArray(inv.items) ? inv.items : [];
+        const sub = items.reduce((sum: number, item: any) => {
+          const amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? 0));
+          return sum + (Number.isNaN(amt) ? 0 : amt);
+        }, 0);
+        return sub > 0;
+      });
+      res.json(validInvoices);
     } catch (error: any) {
       console.error("Error fetching invoices:", error);
       res.status(500).json({ error: error.message });
@@ -169,16 +187,27 @@ async function startServer() {
       const uid = req.user?.uid || "default-user";
       const { id } = req.params;
 
-      const invoiceErrors = validateInvoice(req.body);
+      const [existingInvoice] = await db
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.id, id as string), eq(invoices.userId, uid)));
+
+      if (!existingInvoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+
+      const mergedInvoice = { ...existingInvoice, ...req.body };
+
+      const invoiceErrors = validateInvoice(mergedInvoice);
       if (invoiceErrors.length > 0) {
         return res.status(400).json({ error: invoiceErrors[0], errors: invoiceErrors });
       }
 
-      if (req.body.clientId) {
+      if (mergedInvoice.clientId) {
         const clientMatch = await db
           .select()
           .from(clients)
-          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+          .where(and(eq(clients.id, mergedInvoice.clientId), eq(clients.userId, uid)));
         if (clientMatch.length === 0) {
           return res.status(400).json({ error: "Referenced client does not belong to the current user." });
         }

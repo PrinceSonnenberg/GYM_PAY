@@ -1,26 +1,27 @@
 # GymPay
 
-A dashboard for personal trainers / fitness coaches to manage clients, invoices, expenses, goals, and their session calendar — all in one place.
+A full-stack dashboard for personal trainers and fitness coaches to manage clients, invoices, expenses, goals, and session calendars with real-time database persistence.
 
 ## Features
 
-- **Home** — revenue and pending-invoice totals (computed live from real invoice data), today's booked sessions, recent expenses
-- **Clients** — add clients, see status at a glance
-- **Client Goals** — set and track per-client fitness goals (strength, weight, distance, time, body %)
-- **Invoices** — build an invoice against a real client, add/remove line items, auto-calculated subtotal/tax/total, send it
-- **Expenses** — log expenses by category, filter the recent list
-- **Calendar** — book sessions per client/day, see the day's schedule, cancel a session
+- **Home Dashboard** — Revenue and pending-invoice totals (computed live from database invoice records), today's booked sessions, and recent expenses at a glance.
+- **Client Management & Archiving** — Complete roster management with **Active** and **Archived** client views:
+  - Add, edit, and view client details and invoice histories.
+  - **Archive / Restore**: Safely archive inactive clients to keep your active roster clean while preserving historical records. Archived status persists reliably across sessions and reloads via Cloud SQL.
+  - **Smart Dropdown Filtering**: Archived clients are automatically excluded from active dropdown selectors (e.g., creating new invoices or booking calendar sessions).
+- **Client Goals** — Set and track per-client fitness goals (strength, weight, distance, time, body %).
+- **Invoices** — Create invoices against active clients, manage line items with live subtotal/tax/total calculation, track payment status, and issue client receipts.
+- **Expenses** — Log business expenses by category and filter logs.
+- **Calendar** — Book and manage training sessions per client/day with real-time schedule tracking and session attendance checks.
 
-All of the above share a single in-memory data store (`context/DataContext.tsx`), so actions in one part of the app (e.g. sending an invoice) are reflected everywhere else that depends on it (e.g. the Home dashboard's Pending total).
-
-> **Note:** data currently lives in React state only and resets on page refresh — there's no backend or persistence layer yet (see Roadmap below).
+Data is persisted across server restarts and browser reloads via a PostgreSQL database managed by Drizzle ORM and synced dynamically through `context/DataContext.tsx`.
 
 ## Tech Stack
 
-- React 19 + TypeScript
-- React Router (HashRouter)
-- Vite
-- Tailwind CSS (via CDN, configured in `index.html`)
+- **Frontend**: React 18/19 + TypeScript, React Router, Vite, Tailwind CSS, Lucide Icons
+- **Backend**: Express.js server (`server.ts`) running Node.js with type-stripping
+- **Database**: Cloud SQL (PostgreSQL) with Drizzle ORM and schema migrations
+- **Authentication**: Firebase Auth with server-side token verification
 
 ## Run Locally
 
@@ -31,30 +32,33 @@ npm install
 npm run dev
 ```
 
-Then open the local URL Vite prints (defaults to `http://localhost:3000`).
+Then open `http://localhost:3000` in your browser.
 
 To build for production:
 
 ```bash
 npm run build
-npm run preview
+npm run start
 ```
 
 ## Project Structure
 
 ```
-App.tsx                 Route definitions and layout shell
-index.tsx                Entry point, wraps the app in DataProvider + HashRouter
-context/DataContext.tsx  Shared in-memory data store (clients, invoices, expenses, goals, sessions)
-utils/format.ts          Currency formatting helpers
-types.ts                 Shared TypeScript types
-components/              Icon, BottomNav
+server.ts                Express API backend with Cloud SQL / Drizzle ORM integration
+src/db/schema.ts         Drizzle ORM schema definitions (clients, invoices, expenses, goals, sessions)
+App.tsx                  Route definitions and layout shell
+context/DataContext.tsx   Shared data provider syncing state with backend API endpoints
+types.ts                 Shared TypeScript interface definitions
+components/              Reusable UI components (PageHeader, BottomNav, Icon, EmptyState, Modals)
 pages/                   HomePage, ClientsPage, ClientGoalsPage, NewInvoicePage, ExpensesPage, CalendarPage, SettingsPage
 ```
 
-## Roadmap / Known Gaps
+## Features & Roadmap
 
-- No persistence — data resets on refresh (would need `localStorage` or a real backend)
-- No authentication
-- Settings page is UI-only (not yet wired to real account/business settings)
-- No recurring invoices or automated payment reminders
+- [x] Full Cloud SQL / PostgreSQL persistent backend for all records
+- [x] Client archiving and restoration with active-only dropdown filtering
+- [x] Firebase Authentication integration
+- [x] Invoice generation, payment status management, and statistics
+- [ ] Recurring invoices and automated payment reminders
+- [ ] Export reports (PDF / CSV) for tax and accounting
+

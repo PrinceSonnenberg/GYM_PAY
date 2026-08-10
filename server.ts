@@ -62,7 +62,22 @@ async function startServer() {
   app.get("/api/clients", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      const result = await db.select().from(clients).where(eq(clients.userId, uid));
+      let result = await db.select().from(clients).where(eq(clients.userId, uid));
+      if (result.length === 0) {
+        const seedClientsData = [
+          { id: 'c1', userId: uid, name: 'Sarah Jenkins', email: 'sarah.jenkins@fitmail.com', phone: '(555) 234-5678', status: 'On Track', notes: '', isArchived: false },
+          { id: 'c2', userId: uid, name: 'Mike Ross', email: 'mike.ross@pearson.com', phone: '(555) 876-5432', status: 'At Risk', notes: '', isArchived: false },
+          { id: 'c3', userId: uid, name: 'Jessica Pearson', email: 'jessica.p@pearsonlaw.com', phone: '(555) 999-0011', status: 'New', notes: '', isArchived: false },
+        ];
+        try {
+          result = await db.insert(clients).values(seedClientsData).onConflictDoNothing().returning();
+          if (result.length === 0) {
+            result = await db.select().from(clients).where(eq(clients.userId, uid));
+          }
+        } catch (e) {
+          console.error("Error seeding initial clients:", e);
+        }
+      }
       res.json(result);
     } catch (error: any) {
       console.error("Error fetching clients:", error);
@@ -99,7 +114,17 @@ async function startServer() {
         .where(and(eq(clients.id, id as string), eq(clients.userId, uid)));
 
       if (!existingClient) {
-        return res.status(404).json({ error: "Client not found" });
+        const clientData = { id, userId: uid, name: 'Client', email: 'client@example.com', status: 'New', isArchived: false, ...req.body };
+        const clientErrors = validateClient(clientData);
+        if (clientErrors.length > 0) {
+          return res.status(400).json({ error: clientErrors[0], errors: clientErrors });
+        }
+        const newClientData = prepareTimestampFields(clientData);
+        const result = await db.insert(clients).values(newClientData).onConflictDoUpdate({
+          target: clients.id,
+          set: newClientData,
+        }).returning();
+        return res.json(result[0]);
       }
 
       const mergedClient = { ...existingClient, ...req.body };

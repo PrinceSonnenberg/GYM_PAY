@@ -20,6 +20,7 @@ const CalendarPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { clients, getSessionsForDate, addSession, removeSession } = useData();
+    const activeClients = useMemo(() => clients.filter(c => !c.isArchived), [clients]);
     const [selectedDate, setSelectedDate] = useState(toISO(new Date()));
     const [showForm, setShowForm] = useState(false);
     const [draft, setDraft] = useState(emptyDraft);
@@ -73,7 +74,7 @@ const CalendarPage: React.FC = () => {
                     <button
                         onClick={() => setShowForm(v => !v)}
                         aria-label="Book a session"
-                        disabled={clients.length === 0}
+                        disabled={activeClients.length === 0}
                         className="flex size-10 items-center justify-center rounded-full bg-primary text-white border-2 border-white/20 hover:bg-primary-hover transition-colors disabled:opacity-40"
                     >
                         <Icon name={showForm ? 'close' : 'add'} className="text-[20px]" />
@@ -110,7 +111,7 @@ const CalendarPage: React.FC = () => {
                             className="w-full appearance-none rounded-xl bg-background border-2 border-border-light focus:border-primary h-12 px-4 text-sm font-bold outline-none"
                         >
                             <option value="" disabled>Select client</option>
-                            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {activeClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                         <Icon name="expand_more" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" />
                     </div>
@@ -159,7 +160,7 @@ const CalendarPage: React.FC = () => {
                         icon="event_available"
                         iconBg="bg-primary text-white"
                         title="NOTHING BOOKED"
-                        description={clients.length === 0 ? 'Add a client before booking a session.' : 'Tap the + above to book a session for this day.'}
+                        description={activeClients.length === 0 ? 'Add an active client before booking a session.' : 'Tap the + above to book a session for this day.'}
                     />
                 ) : (
                     <div className="space-y-3">

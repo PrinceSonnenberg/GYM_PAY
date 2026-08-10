@@ -358,12 +358,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const updateClient = (id: string, updates: Partial<Client>) => {
-        setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-        apiFetch(`/api/clients/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates),
-        }).catch(err => console.error('Cloud SQL sync error:', err));
+        setClients(prev => {
+            const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+            const target = updated.find(c => c.id === id);
+            if (target) {
+                apiFetch(`/api/clients/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(target),
+                }).catch(err => console.error('Cloud SQL sync error:', err));
+            }
+            return updated;
+        });
     };
 
     const archiveClient = (id: string) => {

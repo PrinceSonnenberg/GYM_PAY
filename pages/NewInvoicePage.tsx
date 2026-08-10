@@ -286,9 +286,9 @@ const NewInvoicePage: React.FC = () => {
                             style={{ appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2314161f\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                         >
                             <option value="" disabled>-- Select Client --</option>
-                            {clients.filter(c => !c.isArchived || c.id === clientId).map(c => (
+                            {clients.filter(c => !c.isArchived).map(c => (
                                 <option key={c.id} value={c.id}>
-                                    {c.name} {c.isArchived ? '(Archived)' : c.email ? `(${c.email})` : ''}
+                                    {c.name} {c.email ? `(${c.email})` : ''}
                                 </option>
                             ))}
                         </select>

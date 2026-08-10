@@ -6,6 +6,7 @@ import { useData } from '../context/DataContext';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import { MetricType, ActiveGoal } from '../types';
+import { formatDateSA } from '../utils/format';
 
 const templates = ['Weight Loss', 'Hypertrophy', 'Endurance', 'Flexibility', 'Strength Max', 'Fat Loss %', 'Joint Mobility', 'Cardio Fitness'];
 const templateIcons: { [key: string]: string } = {
@@ -47,6 +48,7 @@ const ClientGoalsPage: React.FC = () => {
 
     const [draft, setDraft] = useState(emptyDraft);
     const [editingGoal, setEditingGoal] = useState<ActiveGoal | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const selectedUnit = metricTypes.find(m => m.type === draft.metric)?.unit || 'kg';
 
@@ -54,7 +56,7 @@ const ClientGoalsPage: React.FC = () => {
         setDraft(d => ({ ...d, title: template, metric: templateDefaults[template] }));
     };
 
-    const draftIsValid = draft.title.trim() && draft.current.trim() && draft.target.trim();
+    const draftIsValid = Boolean(draft.title.trim() && draft.current.trim() && draft.target.trim());
 
     const commitDraft = (): boolean => {
         if (!draftIsValid || !clientId) return false;
@@ -81,7 +83,8 @@ const ClientGoalsPage: React.FC = () => {
             progressPct = currentNum >= targetNum ? 100 : 0;
         }
 
-        const dateDetail = draft.date ? `Target Date: ${draft.date} • ` : '';
+        const formattedDate = draft.date ? formatDateSA(draft.date) : '';
+        const dateDetail = formattedDate ? `Target Date: ${formattedDate} • ` : '';
         const descStr = `${draft.metric} • ${dateDetail}Start: ${startNum} ${selectedUnit}`;
 
         const goal: Omit<ActiveGoal, 'id'> = {
@@ -98,16 +101,14 @@ const ClientGoalsPage: React.FC = () => {
             progressColor: progressPct >= 100 ? 'bg-signal' : 'bg-primary',
         };
         addGoal(goal);
+        setDraft(emptyDraft);
+        setSuccessMessage('Goal saved successfully!');
+        setTimeout(() => setSuccessMessage(null), 4000);
         return true;
     };
 
-    const handleAddAnother = () => {
-        if (commitDraft()) setDraft(emptyDraft);
-    };
-
-    const handleSave = () => {
+    const handleSaveGoal = () => {
         commitDraft();
-        navigate(clientId ? `/clients/${clientId}/goals` : '/clients');
     };
 
     const handleSaveEditingGoal = () => {
@@ -171,8 +172,8 @@ const ClientGoalsPage: React.FC = () => {
                 centered
                 onBack={() => navigate(-1)}
                 rightAction={
-                    <button onClick={() => navigate('/clients')} className="flex w-10 items-center justify-end cursor-pointer">
-                        <p className="text-white/60 text-sm font-bold uppercase shrink-0">Cancel</p>
+                    <button onClick={() => navigate(clientId ? `/clients/${clientId}` : '/clients')} className="flex items-center justify-end cursor-pointer">
+                        <p className="text-volt font-bold text-sm uppercase shrink-0 hover:underline">Done</p>
                     </button>
                 }
             />
@@ -194,6 +195,18 @@ const ClientGoalsPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {successMessage && (
+                    <div className="mx-4 my-2 p-3.5 rounded-xl bg-emerald-100 border-2 border-emerald-500 text-emerald-800 text-sm font-bold flex items-center justify-between shadow-sm animate-fade-in">
+                        <div className="flex items-center gap-2">
+                            <Icon name="check_circle" className="text-emerald-600 text-lg" />
+                            <span>{successMessage}</span>
+                        </div>
+                        <button onClick={() => setSuccessMessage(null)} className="p-1 hover:opacity-80 cursor-pointer">
+                            <Icon name="close" className="text-sm" />
+                        </button>
+                    </div>
+                )}
 
                 <div className="flex flex-col gap-3 my-4">
                     <h3 className="font-display text-lg tracking-wide px-4 text-left">QUICK TEMPLATES</h3>
@@ -324,23 +337,18 @@ const ClientGoalsPage: React.FC = () => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-text-muted text-xs font-bold uppercase tracking-widest mb-2">Target Completion Date</label>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-text-muted text-xs font-bold uppercase tracking-widest">Target Completion Date</label>
+                                <span className="text-[10px] text-text-muted font-bold uppercase">(Day / Month / Year)</span>
+                            </div>
                             <input
                                 value={draft.date}
                                 onChange={e => setDraft(d => ({ ...d, date: e.target.value }))}
-                                className="w-full bg-background border-2 border-border-light rounded-xl px-4 py-3 placeholder-text-muted/60 focus:outline-none focus:border-primary transition-all"
+                                className="w-full bg-background border-2 border-border-light rounded-xl px-4 py-3 placeholder-text-muted/60 focus:outline-none focus:border-primary transition-all text-ink font-semibold"
                                 type="date"
                             />
                         </div>
                     </div>
-                    <button
-                        onClick={handleAddAnother}
-                        disabled={!draftIsValid}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink p-4 text-text-muted hover:bg-primary-soft hover:text-primary hover:border-primary transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-text-muted disabled:hover:border-ink cursor-pointer"
-                    >
-                        <Icon name="add" />
-                        <span className="font-bold uppercase text-sm tracking-wide">Add Another Goal</span>
-                    </button>
                 </div>
             </main>
 
@@ -418,12 +426,13 @@ const ClientGoalsPage: React.FC = () => {
 
             <div className="fixed bottom-0 left-0 w-full p-4 bg-gradient-to-t from-background via-background to-transparent z-40 pb-6 pt-12 pointer-events-none">
                 <button
-                    onClick={handleSave}
-                    disabled={!draftIsValid && goals.length === 0}
-                    className="pointer-events-auto w-full max-w-md mx-auto bg-primary hover:bg-primary-hover text-white text-base font-bold uppercase tracking-wide rounded-full py-4 border-2 border-ink shadow-pop active:translate-y-1.5 active:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
+                    onClick={handleSaveGoal}
+                    disabled={!draftIsValid}
+                    title={!draftIsValid ? 'Please fill in Goal Title, Current and Target values to save' : undefined}
+                    className="pointer-events-auto w-full max-w-md mx-auto bg-primary hover:bg-primary-hover text-white text-base font-bold uppercase tracking-wide rounded-full py-4 border-2 border-ink shadow-pop active:translate-y-1.5 active:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
                 >
                     <Icon name="save" />
-                    Save Goals
+                    <span>Save Goal</span>
                 </button>
             </div>
         </div>

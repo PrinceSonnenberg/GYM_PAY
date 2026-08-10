@@ -23,3 +23,19 @@ export const invoiceSubtotal = (items: { amount?: number | string }[] | undefine
         return sum + (Number.isNaN(amt) ? 0 : amt);
     }, 0);
 };
+
+export const formatDateSA = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const [year, month, day] = parts;
+        return `${day}/${month}/${year}`;
+    }
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+

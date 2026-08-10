@@ -62,7 +62,7 @@ interface DataContextType {
     deleteClient: (id: string) => void;
     addInvoice: (invoice: Omit<Invoice, 'id' | 'status'>) => Invoice;
     markInvoicePaid: (id: string) => void;
-    sendInvoiceReminder: (id: string) => void;
+    sendInvoiceReminder: (id: string) => Promise<void>;
     deleteInvoice: (id: string) => void;
     addExpense: (expense: Omit<ExpenseItem, 'id'>) => void;
     addGoal: (goal: Omit<ActiveGoal, 'id'>) => void;
@@ -375,14 +375,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
-    const sendInvoiceReminder = (id: string) => {
+    const sendInvoiceReminder = async (id: string): Promise<void> => {
+        const res = await apiFetch(`/api/invoices/${id}/send`, {
+            method: 'POST',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || 'Failed to send invoice email.');
+        }
+        const updatedInvoice = data.invoice;
         const nowStr = new Date().toISOString().slice(0, 10);
         setInvoices(prev => prev.map(inv => {
             if (inv.id === id) {
                 return {
                     ...inv,
-                    lastReminderSentAt: nowStr,
-                    remindersCount: (inv.remindersCount || 0) + 1,
+                    lastReminderSentAt: updatedInvoice?.lastReminderSentAt || nowStr,
+                    remindersCount: updatedInvoice?.remindersCount ?? ((inv.remindersCount || 0) + 1),
                 };
             }
             return inv;

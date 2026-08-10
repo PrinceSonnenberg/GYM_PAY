@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { Resend } from "resend";
 import { db } from "./src/db/index.ts";
 import { clients, invoices, expenses, sessions, goals, settings, users } from "./src/db/schema.ts";
 import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
@@ -166,6 +167,158 @@ async function startServer() {
     } catch (error: any) {
       console.error("Error deleting invoice:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Send Invoice Email via Resend API
+  app.post("/api/invoices/:id/send", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user?.uid;
+      if (!uid) {
+        return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
+      }
+
+      const { id } = req.params;
+
+      // 1. Look up invoice and confirm ownership
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.id, id as string), eq(invoices.userId, uid)));
+
+      if (!invoice) {
+        return res.status(404).json({ error: "Invoice not found or unauthorized" });
+      }
+
+      // 2. Look up linked client and verify email
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(and(eq(clients.id, invoice.clientId as string), eq(clients.userId, uid)));
+
+      if (!client || !client.email || client.email.trim() === "") {
+        return res.status(400).json({ error: "This client has no email address on file" });
+      }
+
+      // 3. Look up user settings profile for sender details
+      const userSettings = await db
+        .select()
+        .from(settings)
+        .where(eq(settings.userId, uid));
+
+      const profileData = (userSettings[0]?.data as any)?.profile || {};
+      const senderName = profileData.name || "Fitness Trainer";
+
+      // 4. Determine subject line based on remindersCount
+      const isReminder = (invoice.remindersCount ?? 0) > 0;
+      const subject = isReminder ? "Reminder: invoice due" : "Your invoice is ready";
+
+      // 5. Build invoice item details and totals
+      const items = (Array.isArray(invoice.items) ? invoice.items : []) as Array<{
+        title?: string;
+        details?: string;
+        sessions?: number;
+        rate?: number;
+        amount?: number;
+      }>;
+
+      const subtotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      const taxRate = Number(invoice.taxRate) || 0;
+      const tax = subtotal * taxRate;
+      const totalAmount = subtotal + tax;
+
+      const rawOrigin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer as string).origin : "http://localhost:3000");
+      const shareUrl = `${rawOrigin}/#/invoices?id=${invoice.id}`;
+
+      const itemRowsHtml = items
+        .map(
+          (item) => `
+          <tr style="border-bottom: 1px solid #e4e4e7;">
+            <td style="padding: 10px; font-weight: bold; color: #111;">${item.title || "Service"}</td>
+            <td style="padding: 10px; text-align: center; color: #555;">${item.sessions ?? "-"}</td>
+            <td style="padding: 10px; text-align: right; font-weight: bold; color: #111;">R${Number(item.amount || 0).toFixed(2)}</td>
+          </tr>`
+        )
+        .join("");
+
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #111; border: 2px solid #111; border-radius: 12px; background-color: #ffffff;">
+          <h2 style="font-size: 22px; text-transform: uppercase; margin-top: 0; color: #111;">${subject}</h2>
+          <p style="font-size: 15px;">Hi <strong>${client.name}</strong>,</p>
+          <p style="font-size: 14px; color: #555;">An invoice has been issued to you by <strong>${senderName}</strong>.</p>
+          
+          <div style="background-color: #f4f4f5; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #e4e4e7;">
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Invoice ID:</strong> #${invoice.id.slice(-8).toUpperCase()}</p>
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Issued Date:</strong> ${invoice.issuedDate}</p>
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Due Date:</strong> ${invoice.dueDate}</p>
+            <p style="margin: 8px 0 0 0; font-size: 18px; font-weight: bold; color: #2563eb;"><strong>Total Due:</strong> R${totalAmount.toFixed(2)}</p>
+          </div>
+
+          <h3 style="font-size: 14px; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Itemized Services</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
+            <thead>
+              <tr style="background-color: #111; color: #fff; text-align: left;">
+                <th style="padding: 8px 10px;">Item</th>
+                <th style="padding: 8px 10px; text-align: center;">Sessions</th>
+                <th style="padding: 8px 10px; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRowsHtml}
+            </tbody>
+          </table>
+
+          <div style="text-align: center; margin-top: 32px;">
+            <a href="${shareUrl}" style="background-color: #111; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; font-size: 13px; text-transform: uppercase; border-radius: 24px; display: inline-block;">
+              View & Pay Invoice Online
+            </a>
+          </div>
+          <p style="font-size: 11px; color: #888; text-align: center; margin-top: 24px;">Sent via GymPay Fit Invoice System</p>
+        </div>
+      `;
+
+      // 6. Send via Resend
+      const resendApiKey = process.env.RESEND_API_KEY;
+      if (!resendApiKey) {
+        return res.status(500).json({ error: "Email service is not configured (RESEND_API_KEY environment variable missing)" });
+      }
+
+      const resend = new Resend(resendApiKey);
+      const fromAddress = process.env.INVOICE_FROM_EMAIL || "invoices@yourdomain.com";
+
+      const emailResult = await resend.emails.send({
+        from: `${senderName} <${fromAddress}>`,
+        to: [client.email],
+        subject: `${subject} - Invoice #${invoice.id.slice(-8).toUpperCase()}`,
+        html: htmlContent,
+      });
+
+      if (emailResult.error) {
+        console.error("Resend API error:", emailResult.error);
+        return res.status(500).json({ error: emailResult.error.message || "Failed to send email via Resend" });
+      }
+
+      // 7. Update lastReminderSentAt and increment remindersCount in DB
+      const nowStr = new Date().toISOString().slice(0, 10);
+      const newRemindersCount = (invoice.remindersCount ?? 0) + 1;
+
+      const [updatedInvoice] = await db
+        .update(invoices)
+        .set({
+          lastReminderSentAt: nowStr,
+          remindersCount: newRemindersCount,
+        })
+        .where(and(eq(invoices.id, id as string), eq(invoices.userId, uid)))
+        .returning();
+
+      return res.json({
+        success: true,
+        message: "Invoice sent successfully",
+        invoice: updatedInvoice,
+      });
+    } catch (error: any) {
+      console.error("Error sending invoice email:", error);
+      return res.status(500).json({ error: error.message || "An error occurred while sending the invoice email" });
     }
   });
 

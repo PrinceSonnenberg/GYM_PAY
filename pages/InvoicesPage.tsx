@@ -24,6 +24,8 @@ const InvoicesPage: React.FC = () => {
     const [filter, setFilter] = useState<'all' | 'sent' | 'paid'>('all');
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [reminderToast, setReminderToast] = useState<string | null>(null);
+    const [isSendingReminder, setIsSendingReminder] = useState(false);
+    const [reminderError, setReminderError] = useState<string | null>(null);
 
     const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -132,6 +134,18 @@ const InvoicesPage: React.FC = () => {
                         </div>
 
                         <div className="p-4 bg-background border-t-2 border-ink space-y-2">
+                            {reminderError && (
+                                <div className="p-3 rounded-xl bg-danger-soft/80 border-2 border-danger text-danger text-xs font-bold flex items-center justify-between text-left">
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="error" className="shrink-0 text-base" />
+                                        <span>{reminderError}</span>
+                                    </div>
+                                    <button onClick={() => setReminderError(null)} className="p-1 hover:opacity-80">
+                                        <Icon name="close" className="text-sm" />
+                                    </button>
+                                </div>
+                            )}
+
                             <button
                                 onClick={() => setShowPdfView(true)}
                                 className="w-full py-2.5 rounded-full bg-ink text-volt border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-sm"
@@ -154,22 +168,38 @@ const InvoicesPage: React.FC = () => {
                                     </button>
 
                                     <button
-                                        onClick={() => {
-                                            sendInvoiceReminder(selectedInvoice.id);
-                                            const cName = clientFor(selectedInvoice.clientId)?.name || 'Client';
-                                            setReminderToast(`Overdue reminder sent to ${cName} via Email & SMS!`);
-                                            setSelectedInvoice(prev => prev ? {
-                                                ...prev,
-                                                lastReminderSentAt: todayStr,
-                                                remindersCount: (prev.remindersCount || 0) + 1
-                                            } : null);
-                                            setTimeout(() => setReminderToast(null), 4000);
+                                        onClick={async () => {
+                                            if (isSendingReminder) return;
+                                            setReminderError(null);
+                                            setIsSendingReminder(true);
+                                            try {
+                                                await sendInvoiceReminder(selectedInvoice.id);
+                                                const cName = clientFor(selectedInvoice.clientId)?.name || 'Client';
+                                                setReminderToast(`Reminder sent to ${cName} via Email!`);
+                                                setSelectedInvoice(prev => prev ? {
+                                                    ...prev,
+                                                    lastReminderSentAt: todayStr,
+                                                    remindersCount: (prev.remindersCount || 0) + 1
+                                                } : null);
+                                                setTimeout(() => setReminderToast(null), 4000);
+                                            } catch (err: any) {
+                                                setReminderError(err.message || 'Failed to send invoice email.');
+                                            } finally {
+                                                setIsSendingReminder(false);
+                                            }
                                         }}
-                                        className="w-full py-2.5 rounded-full bg-primary text-white border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-primary-hover transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                        disabled={isSendingReminder}
+                                        className={`w-full py-2.5 rounded-full border-2 border-ink font-bold uppercase text-xs tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors ${
+                                            isSendingReminder
+                                                ? 'bg-primary-soft text-primary border-primary cursor-wait'
+                                                : 'bg-primary text-white hover:bg-primary-hover'
+                                        }`}
                                     >
-                                        <Icon name="notifications_active" />
+                                        <Icon name={isSendingReminder ? "autorenew" : "notifications_active"} className={isSendingReminder ? "animate-spin" : ""} />
                                         <span>
-                                            {selectedInvoice.remindersCount 
+                                            {isSendingReminder
+                                                ? 'Sending Email...'
+                                                : selectedInvoice.remindersCount 
                                                 ? `Send Overdue Reminder (${selectedInvoice.remindersCount} Sent)`
                                                 : 'Send Overdue Reminder'}
                                         </span>

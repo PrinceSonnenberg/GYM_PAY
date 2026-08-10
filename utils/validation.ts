@@ -28,7 +28,9 @@ export interface InvoiceInput {
  * Validates client creation and update inputs.
  * Business Rules:
  * 1. Client name is required and cannot be empty or whitespace.
- * 2. At least one contact method (email address or phone number) must be provided.
+ * 2. Client email address is required and must be valid.
+ * 3. Phone number (if provided) must be a valid South African number (e.g., 082 123 4567 or +27 82 123 4567)
+ *    or a standard international number starting with '+'.
  *
  * @returns Array of user-friendly validation error messages (empty array if valid).
  */
@@ -40,10 +42,22 @@ export function validateClient(input: ClientInput): string[] {
   }
   
   const email = input.email ? input.email.trim() : '';
+  if (!email) {
+    errors.push('Client email address is required.');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push('A valid email address is required.');
+  }
+
   const phone = input.phone ? input.phone.trim() : '';
-  
-  if (!email && !phone) {
-    errors.push('At least one contact method (email or phone) is required.');
+  if (phone) {
+    const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
+    const isSouthAfricanLocal = /^0[1-8]\d{8}$/.test(cleaned);
+    const isSouthAfricanIntlNoPlus = /^27[1-8]\d{8}$/.test(cleaned);
+    const isInternational = /^\+[1-9]\d{6,14}$/.test(cleaned);
+
+    if (!isSouthAfricanLocal && !isSouthAfricanIntlNoPlus && !isInternational) {
+      errors.push('Phone number must be a valid South African number (e.g. 082 123 4567) or international format starting with "+".');
+    }
   }
   
   return errors;

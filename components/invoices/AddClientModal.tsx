@@ -41,9 +41,12 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-bold text-text-muted uppercase mb-1">Email Address</label>
+                        <label className="block text-[10px] font-bold text-text-muted uppercase mb-1">
+                            Email Address <span className="text-danger">*</span>
+                        </label>
                         <input
                             type="email"
+                            required
                             value={newClientEmail}
                             onChange={e => setNewClientEmail(e.target.value)}
                             placeholder="alex@example.com"
@@ -56,7 +59,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                             type="tel"
                             value={newClientPhone}
                             onChange={e => setNewClientPhone(e.target.value)}
-                            placeholder="(555) 123-4567"
+                            placeholder="082 123 4567 or +27 82 123 4567"
                             className="w-full rounded-xl bg-background border-2 border-border-light px-3 py-2 text-sm font-bold focus:border-primary focus:outline-none"
                         />
                     </div>
@@ -64,7 +67,8 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                 <div className="flex gap-2 pt-2">
                     <button
                         onClick={handleCreateClient}
-                        className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs py-3 hover:bg-primary-hover transition-colors"
+                        disabled={!newClientName.trim() || !newClientEmail.trim()}
+                        className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs py-3 hover:bg-primary-hover transition-colors disabled:opacity-40 cursor-pointer"
                     >
                         Create Client
                     </button>

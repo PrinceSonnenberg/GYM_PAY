@@ -95,7 +95,7 @@ const seedClients: Client[] = [
 ];
 
 const seedGoals: ActiveGoal[] = [
-    { id: 'g1', clientId: 'c1', icon: 'fitness_center', iconBg: 'bg-primary-soft', iconColor: 'text-primary', title: 'Bench Press Max', description: 'Strength • Ends Dec 12', progress: 87, currentValue: '215', targetValue: '245 lbs', progressLabel: '87%', progressColor: 'bg-primary' },
+    { id: 'g1', clientId: 'c1', icon: 'fitness_center', iconBg: 'bg-primary-soft', iconColor: 'text-primary', title: 'Bench Press Max', description: 'Strength • Ends Dec 12', progress: 87, currentValue: '215', targetValue: '245 kg', progressLabel: '87%', progressColor: 'bg-primary' },
     { id: 'g2', clientId: 'c1', icon: 'local_fire_department', iconBg: 'bg-signal-soft', iconColor: 'text-signal', title: 'Body Fat %', description: 'Composition • Ends Nov 30', progress: 40, currentValue: '18.5', targetValue: '15 %', progressLabel: '-3.5%', progressColor: 'bg-signal' },
 ];
 

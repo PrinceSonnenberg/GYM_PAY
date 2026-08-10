@@ -206,9 +206,12 @@ const ClientsPage: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Email Address</label>
+                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">
+                                    Email Address <span className="text-danger">*</span>
+                                </label>
                                 <input
                                     type="email"
+                                    required
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
                                     placeholder="sarah@example.com"
@@ -216,12 +219,12 @@ const ClientsPage: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Phone Number</label>
+                                <label className="block text-text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Phone Number (Optional)</label>
                                 <input
                                     type="tel"
                                     value={phone}
                                     onChange={e => setPhone(e.target.value)}
-                                    placeholder="(555) 000-0000"
+                                    placeholder="082 123 4567 or +27 82 123 4567"
                                     className="w-full rounded-xl bg-background border-2 border-border-light focus:border-primary focus:outline-none px-4 py-2.5 font-bold text-sm"
                                 />
                             </div>
@@ -244,7 +247,7 @@ const ClientsPage: React.FC = () => {
                     <div className="flex gap-2 pt-2">
                         <button
                             onClick={editingClient ? handleUpdate : handleAdd}
-                            disabled={!name.trim()}
+                            disabled={!name.trim() || !email.trim()}
                             className="flex-1 rounded-xl bg-primary text-white font-bold uppercase text-xs tracking-wide py-3 hover:bg-primary-hover transition-colors disabled:opacity-40 shadow-sm"
                         >
                             {editingClient ? 'Save Changes' : 'Create Client'}

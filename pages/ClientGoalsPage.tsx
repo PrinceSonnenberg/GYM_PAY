@@ -30,8 +30,8 @@ const templateDefaults: { [key: string]: MetricType } = {
 };
 
 const metricTypes = [
-    { type: MetricType.Weight, icon: 'fitness_center', unit: 'lbs' },
-    { type: MetricType.Dist, icon: 'straighten', unit: 'mi' },
+    { type: MetricType.Weight, icon: 'fitness_center', unit: 'kg' },
+    { type: MetricType.Dist, icon: 'straighten', unit: 'km' },
     { type: MetricType.Time, icon: 'timer', unit: 'min' },
     { type: MetricType.BodyPercent, icon: 'percent', unit: '%' }
 ];
@@ -48,7 +48,7 @@ const ClientGoalsPage: React.FC = () => {
     const [draft, setDraft] = useState(emptyDraft);
     const [editingGoal, setEditingGoal] = useState<ActiveGoal | null>(null);
 
-    const selectedUnit = metricTypes.find(m => m.type === draft.metric)?.unit || 'lbs';
+    const selectedUnit = metricTypes.find(m => m.type === draft.metric)?.unit || 'kg';
 
     const applyTemplate = (template: string) => {
         setDraft(d => ({ ...d, title: template, metric: templateDefaults[template] }));
@@ -59,8 +59,30 @@ const ClientGoalsPage: React.FC = () => {
     const commitDraft = (): boolean => {
         if (!draftIsValid || !clientId) return false;
         const currentNum = parseFloat(draft.current) || 0;
-        const targetNum = parseFloat(draft.target) || 1;
-        const progressPct = Math.min(100, Math.max(0, Math.round((currentNum / targetNum) * 100)));
+        const targetNum = parseFloat(draft.target) || 0;
+        const startNum = currentNum;
+
+        let progressPct = 0;
+        if (targetNum < startNum) {
+            // Reduction / Weight Loss goal (e.g., Start: 110 kg, Target: 90 kg)
+            const totalToChange = startNum - targetNum;
+            const changeMade = startNum - currentNum;
+            progressPct = totalToChange > 0 
+                ? Math.min(100, Math.max(0, Math.round((changeMade / totalToChange) * 100)))
+                : 0;
+        } else if (targetNum > startNum) {
+            // Increase / Muscle Gain goal (e.g., Start: 80 kg, Target: 100 kg)
+            const totalToChange = targetNum - startNum;
+            const changeMade = currentNum - startNum;
+            progressPct = totalToChange > 0
+                ? Math.min(100, Math.max(0, Math.round((changeMade / totalToChange) * 100)))
+                : 0;
+        } else {
+            progressPct = currentNum >= targetNum ? 100 : 0;
+        }
+
+        const dateDetail = draft.date ? `Target Date: ${draft.date} • ` : '';
+        const descStr = `${draft.metric} • ${dateDetail}Start: ${startNum} ${selectedUnit}`;
 
         const goal: Omit<ActiveGoal, 'id'> = {
             clientId,
@@ -68,7 +90,7 @@ const ClientGoalsPage: React.FC = () => {
             iconBg: 'bg-primary-soft',
             iconColor: 'text-primary',
             title: draft.title.trim(),
-            description: draft.date ? `${draft.metric} • Target: ${draft.date}` : draft.metric,
+            description: descStr,
             progress: progressPct,
             currentValue: draft.current,
             targetValue: `${draft.target} ${selectedUnit}`,
@@ -91,10 +113,29 @@ const ClientGoalsPage: React.FC = () => {
     const handleSaveEditingGoal = () => {
         if (!editingGoal) return;
         const currentNum = parseFloat(editingGoal.currentValue) || 0;
-        // Parse target numerical part
         const targetNumStr = editingGoal.targetValue.replace(/[^0-9.]/g, '');
-        const targetNum = parseFloat(targetNumStr) || 1;
-        const progressPct = Math.min(100, Math.max(0, Math.round((currentNum / targetNum) * 100)));
+        const targetNum = parseFloat(targetNumStr) || 0;
+
+        // Try to parse baseline starting weight/value from description if available
+        const startMatch = editingGoal.description.match(/Start:\s*([0-9.]+)/i);
+        const startNum = startMatch ? parseFloat(startMatch[1]) : currentNum;
+
+        let progressPct = 0;
+        if (targetNum < startNum) {
+            const totalToChange = startNum - targetNum;
+            const changeMade = startNum - currentNum;
+            progressPct = totalToChange > 0 
+                ? Math.min(100, Math.max(0, Math.round((changeMade / totalToChange) * 100)))
+                : 0;
+        } else if (targetNum > startNum) {
+            const totalToChange = targetNum - startNum;
+            const changeMade = currentNum - startNum;
+            progressPct = totalToChange > 0
+                ? Math.min(100, Math.max(0, Math.round((changeMade / totalToChange) * 100)))
+                : 0;
+        } else {
+            progressPct = currentNum >= targetNum ? 100 : 0;
+        }
 
         updateGoal(editingGoal.id, {
             title: editingGoal.title,

@@ -21,6 +21,43 @@ async function startServer() {
     res.json({ status: "ok", db: "cloudsql-postgresql" });
   });
 
+  /**
+   * Helper function to safely convert date strings into JS Date objects
+   * for Drizzle timestamp columns to prevent 'value.toISOString is not a function' errors.
+   */
+  function prepareTimestampFields<T extends Record<string, any>>(data: T): T {
+    if (!data || typeof data !== "object") return data;
+    const cleaned = { ...data };
+
+    if ("createdAt" in cleaned && cleaned.createdAt !== null && cleaned.createdAt !== undefined) {
+      if (typeof cleaned.createdAt === "string" || typeof cleaned.createdAt === "number") {
+        const d = new Date(cleaned.createdAt);
+        if (!isNaN(d.getTime())) {
+          cleaned.createdAt = d as any;
+        } else {
+          delete cleaned.createdAt;
+        }
+      } else if (!(cleaned.createdAt instanceof Date)) {
+        delete cleaned.createdAt;
+      }
+    }
+
+    if ("updatedAt" in cleaned && cleaned.updatedAt !== null && cleaned.updatedAt !== undefined) {
+      if (typeof cleaned.updatedAt === "string" || typeof cleaned.updatedAt === "number") {
+        const d = new Date(cleaned.updatedAt);
+        if (!isNaN(d.getTime())) {
+          cleaned.updatedAt = d as any;
+        } else {
+          delete cleaned.updatedAt;
+        }
+      } else if (!(cleaned.updatedAt instanceof Date)) {
+        delete cleaned.updatedAt;
+      }
+    }
+
+    return cleaned;
+  }
+
   // Clients API
   app.get("/api/clients", requireAuth, async (req: AuthRequest, res) => {
     try {
@@ -42,7 +79,7 @@ async function startServer() {
         return res.status(400).json({ error: clientErrors[0], errors: clientErrors });
       }
 
-      const newClient = { ...req.body, userId: uid };
+      const newClient = prepareTimestampFields({ ...req.body, userId: uid });
       const result = await db.insert(clients).values(newClient).returning();
       res.json(result[0]);
     } catch (error: any) {
@@ -61,9 +98,10 @@ async function startServer() {
         return res.status(400).json({ error: clientErrors[0], errors: clientErrors });
       }
 
+      const updateData = prepareTimestampFields(req.body);
       const result = await db
         .update(clients)
-        .set(req.body)
+        .set(updateData)
         .where(and(eq(clients.id, id as string), eq(clients.userId, uid)))
         .returning();
       res.json(result[0]);
@@ -117,7 +155,7 @@ async function startServer() {
         }
       }
 
-      const newInvoice = { ...req.body, userId: uid };
+      const newInvoice = prepareTimestampFields({ ...req.body, userId: uid });
       const result = await db.insert(invoices).values(newInvoice).returning();
       res.json(result[0]);
     } catch (error: any) {
@@ -146,9 +184,10 @@ async function startServer() {
         }
       }
 
+      const updateData = prepareTimestampFields(req.body);
       const result = await db
         .update(invoices)
-        .set(req.body)
+        .set(updateData)
         .where(and(eq(invoices.id, id as string), eq(invoices.userId, uid)))
         .returning();
       res.json(result[0]);
@@ -337,7 +376,7 @@ async function startServer() {
   app.post("/api/expenses", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      const newExpense = { ...req.body, userId: uid };
+      const newExpense = prepareTimestampFields({ ...req.body, userId: uid });
       const result = await db.insert(expenses).values(newExpense).returning();
       res.json(result[0]);
     } catch (error: any) {
@@ -361,7 +400,18 @@ async function startServer() {
   app.post("/api/sessions", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      const newSession = { ...req.body, userId: uid };
+
+      if (req.body.clientId) {
+        const clientMatch = await db
+          .select()
+          .from(clients)
+          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+        if (clientMatch.length === 0) {
+          return res.status(400).json({ error: "Referenced client does not exist or does not belong to the current user." });
+        }
+      }
+
+      const newSession = prepareTimestampFields({ ...req.body, userId: uid });
       const result = await db.insert(sessions).values(newSession).returning();
       res.json(result[0]);
     } catch (error: any) {
@@ -374,9 +424,21 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       const { id } = req.params;
+
+      if (req.body.clientId) {
+        const clientMatch = await db
+          .select()
+          .from(clients)
+          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+        if (clientMatch.length === 0) {
+          return res.status(400).json({ error: "Referenced client does not exist or does not belong to the current user." });
+        }
+      }
+
+      const updateData = prepareTimestampFields(req.body);
       const result = await db
         .update(sessions)
-        .set(req.body)
+        .set(updateData)
         .where(and(eq(sessions.id, id as string), eq(sessions.userId, uid)))
         .returning();
       res.json(result[0]);
@@ -413,7 +475,18 @@ async function startServer() {
   app.post("/api/goals", requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user?.uid || "default-user";
-      const newGoal = { ...req.body, userId: uid };
+
+      if (req.body.clientId) {
+        const clientMatch = await db
+          .select()
+          .from(clients)
+          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+        if (clientMatch.length === 0) {
+          return res.status(400).json({ error: "Referenced client does not exist or does not belong to the current user." });
+        }
+      }
+
+      const newGoal = prepareTimestampFields({ ...req.body, userId: uid });
       const result = await db.insert(goals).values(newGoal).returning();
       res.json(result[0]);
     } catch (error: any) {
@@ -426,9 +499,21 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       const { id } = req.params;
+
+      if (req.body.clientId) {
+        const clientMatch = await db
+          .select()
+          .from(clients)
+          .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
+        if (clientMatch.length === 0) {
+          return res.status(400).json({ error: "Referenced client does not exist or does not belong to the current user." });
+        }
+      }
+
+      const updateData = prepareTimestampFields(req.body);
       const result = await db
         .update(goals)
-        .set(req.body)
+        .set(updateData)
         .where(and(eq(goals.id, id as string), eq(goals.userId, uid)))
         .returning();
       res.json(result[0]);

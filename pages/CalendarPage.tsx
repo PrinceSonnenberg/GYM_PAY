@@ -160,7 +160,23 @@ const CalendarPage: React.FC = () => {
                         icon="event_available"
                         iconBg="bg-primary text-white"
                         title="NOTHING BOOKED"
-                        description={activeClients.length === 0 ? 'Add an active client before booking a session.' : 'Tap the + above to book a session for this day.'}
+                        description={activeClients.length === 0 ? 'Add an active client to start booking sessions.' : undefined}
+                        action={
+                            activeClients.length > 0
+                                ? {
+                                      label: 'Book a Session',
+                                      icon: 'add',
+                                      onClick: () => {
+                                          setShowForm(true);
+                                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                                      },
+                                  }
+                                : {
+                                      label: 'Add Active Client',
+                                      icon: 'person_add',
+                                      onClick: () => navigate('/clients'),
+                                  }
+                        }
                     />
                 ) : (
                     <div className="space-y-3">

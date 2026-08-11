@@ -163,15 +163,7 @@ async function startServer() {
     try {
       const uid = req.user?.uid || "default-user";
       const result = await db.select().from(invoices).where(eq(invoices.userId, uid));
-      const validInvoices = result.filter((inv: any) => {
-        const items = Array.isArray(inv.items) ? inv.items : [];
-        const sub = items.reduce((sum: number, item: any) => {
-          const amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? 0));
-          return sum + (Number.isNaN(amt) ? 0 : amt);
-        }, 0);
-        return sub > 0;
-      });
-      res.json(validInvoices);
+      res.json(result);
     } catch (error: any) {
       console.error("Error fetching invoices:", error);
       res.status(500).json({ error: error.message });

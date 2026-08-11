@@ -64,6 +64,7 @@ interface DataContextType {
     deleteClient: (id: string) => void;
     addInvoice: (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'overdue' }) => Invoice;
     markInvoicePaid: (id: string) => void;
+    cancelInvoice: (id: string) => void;
     sendInvoiceReminder: (id: string) => Promise<void>;
     deleteInvoice: (id: string) => void;
     addExpense: (expense: Omit<ExpenseItem, 'id'>) => void;
@@ -155,8 +156,16 @@ const getInvoiceTotalAmount = (inv: Partial<Invoice>): number => {
         const amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? 0));
         return sum + (Number.isNaN(amt) ? 0 : amt);
     }, 0);
+    
+    let totalAfterDiscount = sub;
+    if (inv.discountType === 'percentage' && typeof inv.discountValue === 'number') {
+        totalAfterDiscount = sub - (sub * (inv.discountValue / 100));
+    } else if (inv.discountType === 'fixed' && typeof inv.discountValue === 'number') {
+        totalAfterDiscount = Math.max(0, sub - inv.discountValue);
+    }
+
     const tax = typeof inv.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv.taxRate ?? 0)) || 0;
-    return sub + sub * tax;
+    return totalAfterDiscount + totalAfterDiscount * tax;
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -227,7 +236,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (invoicesRes.ok) {
                     const invoicesData = await invoicesRes.json();
                     if (Array.isArray(invoicesData)) {
-                        setInvoices(invoicesData.filter(inv => getInvoiceTotalAmount(inv) > 0));
+                        setInvoices(invoicesData);
                     }
                 }
 
@@ -446,6 +455,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const cancelInvoice = (id: string) => {
+        let updatedInvoice: Invoice | null = null;
+        setInvoices(prev => prev.map(inv => {
+            if (inv.id === id) {
+                updatedInvoice = { ...inv, status: 'cancelled' };
+                return updatedInvoice;
+            }
+            return inv;
+        }));
+        if (updatedInvoice) {
+            apiFetch(`/api/invoices/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedInvoice),
+            }).catch(err => console.error('Cloud SQL sync error (cancel invoice):', err));
+        }
+    };
+
     const sendInvoiceReminder = async (id: string): Promise<void> => {
         const res = await apiFetch(`/api/invoices/${id}/send`, {
             method: 'POST',
@@ -470,10 +497,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const deleteInvoice = (id: string) => {
         setInvoices(prev => prev.filter(inv => inv.id !== id));
+        apiFetch(`/api/invoices/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const addExpense: DataContextType['addExpense'] = (expense) => {
-        setExpenses(prev => [{ ...expense, id: crypto.randomUUID() }, ...prev]);
+        const newExpense = { ...expense, id: crypto.randomUUID() };
+        setExpenses(prev => [newExpense, ...prev]);
+        apiFetch('/api/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newExpense),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const addGoal: DataContextType['addGoal'] = (goal) => {
@@ -501,19 +535,54 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addSession: DataContextType['addSession'] = (session) => {
-        setSessions(prev => [...prev, { ...session, id: crypto.randomUUID(), status: session.status || 'scheduled' }]);
+        const newSession = { ...session, id: crypto.randomUUID(), status: session.status || 'scheduled' };
+        setSessions(prev => [...prev, newSession]);
+        apiFetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newSession),
+        }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const updateSessionStatus = (id: string, status: SessionAttendanceStatus, notes?: string) => {
-        setSessions(prev => prev.map(s => s.id === id ? { ...s, status, ...(notes !== undefined ? { notes } : {}) } : s));
+        let updated: Session | undefined;
+        setSessions(prev => prev.map(s => {
+            if (s.id === id) {
+                updated = { ...s, status, ...(notes !== undefined ? { notes } : {}) };
+                return updated;
+            }
+            return s;
+        }));
+        if (updated) {
+            apiFetch(`/api/sessions/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated),
+            }).catch(err => console.error('Cloud SQL sync error:', err));
+        }
     };
 
     const updateSession = (id: string, updates: Partial<Session>) => {
-        setSessions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+        let updated: Session | undefined;
+        setSessions(prev => prev.map(s => {
+            if (s.id === id) {
+                updated = { ...s, ...updates };
+                return updated;
+            }
+            return s;
+        }));
+        if (updated) {
+            apiFetch(`/api/sessions/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated),
+            }).catch(err => console.error('Cloud SQL sync error:', err));
+        }
     };
 
     const removeSession = (id: string) => {
         setSessions(prev => prev.filter(s => s.id !== id));
+        apiFetch(`/api/sessions/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
     const getClientGoals = (clientId: string) => goals.filter(g => g.clientId === clientId);
@@ -538,6 +607,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 deleteClient,
                 addInvoice,
                 markInvoicePaid,
+                cancelInvoice,
                 sendInvoiceReminder,
                 deleteInvoice,
                 addExpense,

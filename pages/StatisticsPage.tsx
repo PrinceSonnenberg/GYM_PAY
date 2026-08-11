@@ -25,12 +25,19 @@ const StatisticsPage: React.FC = () => {
 
     const invoiceTotal = (inv: Invoice) => {
         const subtotal = invoiceSubtotal(inv?.items);
+        let afterDiscount = subtotal;
+        if (inv.discountType === 'percentage' && typeof inv.discountValue === 'number') {
+            afterDiscount = subtotal - (subtotal * (inv.discountValue / 100));
+        } else if (inv.discountType === 'fixed' && typeof inv.discountValue === 'number') {
+            afterDiscount = Math.max(0, subtotal - inv.discountValue);
+        }
         const taxRate = typeof inv?.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv?.taxRate ?? 0)) || 0;
-        const total = subtotal + subtotal * taxRate;
+        const total = afterDiscount + afterDiscount * taxRate;
         return Number.isNaN(total) ? 0 : total;
     };
 
     invoices.forEach(inv => {
+        if (inv.status === 'cancelled') return;
         const val = invoiceTotal(inv);
         if (inv.status === 'paid') {
             paidCount++;

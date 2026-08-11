@@ -95,8 +95,10 @@ export interface Invoice {
     dueDate: string;
     items: InvoiceItem[];
     notes: string;
-    status: 'sent' | 'paid';
+    status: 'sent' | 'paid' | 'cancelled' | 'draft';
     taxRate: number;
+    discountType?: 'percentage' | 'fixed';
+    discountValue?: number;
     lastReminderSentAt?: string;
     remindersCount?: number;
     appliedCreditSessions?: string[];

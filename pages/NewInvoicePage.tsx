@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import PageHeader from '../components/PageHeader';
@@ -56,6 +56,8 @@ const NewInvoicePage: React.FC = () => {
     ]);
     const [notes, setNotes] = useState(settings.invoiceDefaults.defaultNotes || 'Thank you for your business!');
     const [taxRate, setTaxRate] = useState<number>(settings.invoiceDefaults.defaultTaxRate ?? 0.05);
+    const [discountType, setDiscountType] = useState<'percentage' | 'fixed' | 'none'>('none');
+    const [discountValue, setDiscountValue] = useState<number>(0);
     
     // Interactive Service & Sessions Builder State
     const [selectedServiceId, setSelectedServiceId] = useState<string>(services[0]?.id || 'srv-1on1');
@@ -87,8 +89,16 @@ const NewInvoicePage: React.FC = () => {
     const selectedClient = clients.find(c => c.id === clientId);
 
     const subtotal = invoiceSubtotal(items);
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
+    
+    let afterDiscount = subtotal;
+    if (discountType === 'percentage') {
+        afterDiscount = subtotal - (subtotal * (discountValue / 100));
+    } else if (discountType === 'fixed') {
+        afterDiscount = Math.max(0, subtotal - discountValue);
+    }
+    
+    const tax = afterDiscount * taxRate;
+    const total = afterDiscount + tax;
 
     const removeItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
 
@@ -193,6 +203,7 @@ const NewInvoicePage: React.FC = () => {
             items,
             notes,
             taxRate,
+            ...(discountType !== 'none' && { discountType, discountValue }),
         });
 
         setCreatedInvoice(newInv);
@@ -576,7 +587,34 @@ const NewInvoicePage: React.FC = () => {
                     </div>
                 </section>
 
-                <section className="px-5 pb-6 pt-6">
+                <section className="px-5 pb-6 pt-6 flex flex-col gap-5">
+                    <label className="flex flex-col w-full">
+                        <span className="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2 ml-1">Discount Type</span>
+                        <select
+                            value={discountType}
+                            onChange={(e) => setDiscountType(e.target.value as any)}
+                            className="w-full p-4 rounded-xl bg-white border-2 border-ink text-sm focus:ring-0 focus:border-primary transition-all outline-none font-bold"
+                        >
+                            <option value="none">No Discount</option>
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed Amount</option>
+                        </select>
+                    </label>
+
+                    {discountType !== 'none' && (
+                        <label className="flex flex-col w-full">
+                            <span className="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2 ml-1">Discount Value {discountType === 'percentage' ? '(%)' : `(${currency})`}</span>
+                            <input
+                                type="number"
+                                min="0"
+                                value={discountValue || ''}
+                                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+                                className="w-full p-4 rounded-xl bg-white border-2 border-ink text-sm font-bold font-mono focus:ring-0 focus:border-primary transition-all outline-none"
+                                placeholder={discountType === 'percentage' ? "10" : "50.00"}
+                            />
+                        </label>
+                    )}
+
                     <label className="flex flex-col w-full">
                         <span className="text-text-muted text-[10px] font-bold uppercase tracking-widest mb-2 ml-1">Invoice Notes / Terms</span>
                         <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-4 rounded-xl bg-white border-2 border-ink text-sm placeholder:text-gray-400 focus:ring-0 focus:border-primary transition-all resize-none outline-none" placeholder="Add payment instructions or notes..." rows={3}></textarea>
@@ -586,6 +624,14 @@ const NewInvoicePage: React.FC = () => {
                 <section className="px-5 py-8 mt-4 bg-ink">
                     <div className="space-y-3">
                         <div className="flex justify-between items-center"><span className="text-white/60 text-sm font-medium">Subtotal</span><span className="text-sm font-bold font-mono text-white">{formatCurrency(subtotal, currency)}</span></div>
+                        
+                        {discountType !== 'none' && (
+                            <div className="flex justify-between items-center text-danger">
+                                <span className="text-sm font-medium">Discount {discountType === 'percentage' ? `(${discountValue}%)` : ''}</span>
+                                <span className="text-sm font-bold font-mono">-{formatCurrency(discountType === 'percentage' ? (subtotal * (discountValue / 100)) : discountValue, currency)}</span>
+                            </div>
+                        )}
+                        
                         <div className="flex justify-between items-center"><span className="text-white/60 text-sm font-medium">Tax ({ (taxRate * 100).toFixed(0) }%)</span><span className="text-sm font-bold font-mono text-white">{formatCurrency(tax, currency)}</span></div>
                         <div className="h-px bg-white/20 my-2 w-full"></div>
                         <div className="flex justify-between items-center pt-1">

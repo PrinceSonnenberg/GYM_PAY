@@ -32,8 +32,10 @@ export const invoices = pgTable('invoices', {
   issuedDate: text('issued_date').notNull(),
   dueDate: text('due_date').notNull(),
   notes: text('notes'),
-  status: text('status').notNull().default('sent'), // 'sent' | 'paid'
+  status: text('status').notNull().default('sent'), // 'sent' | 'paid' | 'cancelled'
   taxRate: real('tax_rate').notNull().default(0.05),
+  discountType: text('discount_type'), // 'percentage' | 'fixed'
+  discountValue: real('discount_value'),
   items: jsonb('items').notNull(), // array of InvoiceItem
   lastReminderSentAt: text('last_reminder_sent_at'),
   remindersCount: integer('reminders_count').default(0),

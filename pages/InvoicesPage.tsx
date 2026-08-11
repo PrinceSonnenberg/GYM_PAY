@@ -13,7 +13,7 @@ import { Invoice } from '../types';
 const InvoicesPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { invoices, clients, markInvoicePaid, deleteInvoice, sendInvoiceReminder, settings } = useData();
+    const { invoices, clients, markInvoicePaid, cancelInvoice, deleteInvoice, sendInvoiceReminder, settings } = useData();
     const queryId = new URLSearchParams(location.search).get('id');
     useEffect(() => {
         if (queryId && invoices.length > 0) {
@@ -21,7 +21,7 @@ const InvoicesPage: React.FC = () => {
             if (target) setSelectedInvoice(target);
         }
     }, [queryId, invoices]);
-    const [filter, setFilter] = useState<'all' | 'sent' | 'paid'>('all');
+    const [filter, setFilter] = useState<'all' | 'sent' | 'paid' | 'cancelled'>('all');
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [reminderToast, setReminderToast] = useState<string | null>(null);
     const [isSendingReminder, setIsSendingReminder] = useState(false);
@@ -37,21 +37,28 @@ const InvoicesPage: React.FC = () => {
 
     const calcTotal = (inv: Invoice) => {
         const sub = invoiceSubtotal(inv?.items);
+        let afterDiscount = sub;
+        if (inv.discountType === 'percentage' && typeof inv.discountValue === 'number') {
+            afterDiscount = sub - (sub * (inv.discountValue / 100));
+        } else if (inv.discountType === 'fixed' && typeof inv.discountValue === 'number') {
+            afterDiscount = Math.max(0, sub - inv.discountValue);
+        }
         const taxRate = typeof inv?.taxRate === 'number' ? inv.taxRate : parseFloat(String(inv?.taxRate ?? 0)) || 0;
-        const total = sub + sub * taxRate;
+        const total = afterDiscount + afterDiscount * taxRate;
         return Number.isNaN(total) ? 0 : total;
     };
 
     const filteredInvoices = invoices.filter(inv => {
-        if (calcTotal(inv) <= 0) return false;
+        if (!inv || !inv.id) return false;
         if (filter === 'all') return true;
         return inv.status === filter;
     });
 
-    const totalPaid = invoices.filter(i => i.status === 'paid' && calcTotal(i) > 0).reduce((sum, i) => sum + calcTotal(i), 0);
-    const totalPending = invoices.filter(i => i.status === 'sent' && calcTotal(i) > 0).reduce((sum, i) => sum + calcTotal(i), 0);
+    const totalPaid = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + calcTotal(i), 0);
+    const totalPending = invoices.filter(i => i.status === 'sent').reduce((sum, i) => sum + calcTotal(i), 0);
     
     const billedThisMonth = invoices.reduce((sum, inv) => {
+        if (inv.status === 'cancelled') return sum;
         const d = new Date(inv.issuedDate || inv.dueDate || now);
         if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
             return sum + calcTotal(inv);
@@ -174,6 +181,18 @@ const InvoicesPage: React.FC = () => {
                                     >
                                         <Icon name="payments" />
                                         <span>Mark as Paid</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm("Are you sure you want to cancel this invoice? It will not be counted towards your revenue.")) {
+                                                cancelInvoice(selectedInvoice.id);
+                                                setSelectedInvoice(prev => prev ? { ...prev, status: 'cancelled' } : null);
+                                            }
+                                        }}
+                                        className="w-full py-3 rounded-full bg-white text-ink border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-border-light transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="cancel" />
+                                        <span>Cancel Invoice</span>
                                     </button>
 
                                     <button
@@ -354,10 +373,16 @@ const InvoicesPage: React.FC = () => {
                                         <span>Subtotal:</span>
                                         <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items), settings.invoiceDefaults.currency)}</span>
                                     </div>
+                                    {selectedInvoice.discountType && (
+                                        <div className="flex justify-between text-text-muted font-medium mb-2">
+                                            <span>Discount {selectedInvoice.discountType === 'percentage' ? `(${selectedInvoice.discountValue}%)` : ''}:</span>
+                                            <span className="font-mono text-danger">-{formatCurrency(selectedInvoice.discountType === 'percentage' ? (invoiceSubtotal(selectedInvoice.items) * (selectedInvoice.discountValue! / 100)) : selectedInvoice.discountValue!, settings.invoiceDefaults.currency)}</span>
+                                        </div>
+                                    )}
                                     {selectedInvoice.taxRate > 0 && (
                                         <div className="flex justify-between text-text-muted font-medium mb-2">
                                             <span>Tax ({(selectedInvoice.taxRate * 100).toFixed(0)}%):</span>
-                                            <span className="font-mono">{formatCurrency(invoiceSubtotal(selectedInvoice.items) * selectedInvoice.taxRate, settings.invoiceDefaults.currency)}</span>
+                                            <span className="font-mono">{formatCurrency((invoiceSubtotal(selectedInvoice.items) - (selectedInvoice.discountType ? (selectedInvoice.discountType === 'percentage' ? invoiceSubtotal(selectedInvoice.items) * (selectedInvoice.discountValue! / 100) : selectedInvoice.discountValue!) : 0)) * selectedInvoice.taxRate, settings.invoiceDefaults.currency)}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between items-center pt-2 mt-2 border-t-2 border-ink font-bold text-sm text-ink">
@@ -429,7 +454,7 @@ const InvoicesPage: React.FC = () => {
 
                 {/* Filters */}
                 <div className="flex gap-2 bg-white p-1.5 rounded-2xl border-2 border-ink">
-                    {(['all', 'sent', 'paid'] as const).map(tab => (
+                    {(['all', 'sent', 'paid', 'cancelled'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setFilter(tab)}

@@ -125,9 +125,16 @@ const ClientsPage: React.FC = () => {
     const getClientInvoiceSummary = (clientId: string) => {
         const clientInvoices = invoices.filter(i => i.clientId === clientId);
         const totalBilled = clientInvoices.reduce((sum, inv) => {
+            if (inv.status === 'cancelled') return sum;
             const subtotal = (inv.items || []).reduce((s, item) => s + (item.amount || 0), 0);
-            const tax = subtotal * (inv.taxRate ?? 0);
-            return sum + subtotal + tax;
+            let afterDiscount = subtotal;
+            if (inv.discountType === 'percentage' && typeof inv.discountValue === 'number') {
+                afterDiscount = subtotal - (subtotal * (inv.discountValue / 100));
+            } else if (inv.discountType === 'fixed' && typeof inv.discountValue === 'number') {
+                afterDiscount = Math.max(0, subtotal - inv.discountValue);
+            }
+            const tax = afterDiscount * (inv.taxRate ?? 0);
+            return sum + afterDiscount + tax;
         }, 0);
         const paidInvoices = clientInvoices.filter(i => (i.status || '').toLowerCase() === 'paid');
         return { count: clientInvoices.length, paidCount: paidInvoices.length, totalBilled };

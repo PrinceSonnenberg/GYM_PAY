@@ -16,10 +16,15 @@ export const formatCurrency = (n: number | string | undefined | null, currency: 
     return `${sign}${symbol}${Math.abs(safeNum).toFixed(2)}`;
 };
 
-export const invoiceSubtotal = (items: { amount?: number | string }[] | undefined | null): number => {
+export const invoiceSubtotal = (items: { amount?: number | string; rate?: number | string; sessions?: number | string }[] | undefined | null): number => {
     if (!Array.isArray(items)) return 0;
-    return items.reduce((sum, item) => {
-        const amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? 0));
+    return items.reduce((sum, item: any) => {
+        let amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? ''));
+        if (Number.isNaN(amt) || item?.amount === undefined || item?.amount === null) {
+            const rate = typeof item?.rate === 'number' ? item.rate : parseFloat(String(item?.rate ?? 0));
+            const sessions = typeof item?.sessions === 'number' ? item.sessions : parseFloat(String(item?.sessions ?? 1));
+            amt = (Number.isNaN(rate) ? 0 : rate) * (Number.isNaN(sessions) ? 1 : sessions);
+        }
         return sum + (Number.isNaN(amt) ? 0 : amt);
     }, 0);
 };

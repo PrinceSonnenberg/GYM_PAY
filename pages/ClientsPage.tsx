@@ -27,7 +27,7 @@ const statusBadgeStyle: Record<string, string> = {
 const ClientsPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { clients, invoices, settings, addClient, updateClient, archiveClient, restoreClient, deleteClient, getClientSessions } = useData();
+    const { clients, invoices, settings, addClient, updateClient, archiveClient, restoreClient, deleteClient, getClientSessions, clientError, clearClientError } = useData();
     const [showForm, setShowForm] = useState(false);
     const [viewTab, setViewTab] = useState<'active' | 'archived'>('active');
 
@@ -232,9 +232,14 @@ const ClientsPage: React.FC = () => {
                         <span className="text-xs text-text-muted font-bold">Required: Name + Email or Phone</span>
                     </div>
 
-                    {formError && (
-                        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl">
-                            {formError}
+                    {(formError || clientError) && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center justify-between">
+                            <span>{formError || clientError}</span>
+                            {clientError && (
+                                <button onClick={clearClientError} className="text-rose-500 hover:text-rose-700 text-sm font-bold ml-2">
+                                    ✕
+                                </button>
+                            )}
                         </div>
                     )}
 

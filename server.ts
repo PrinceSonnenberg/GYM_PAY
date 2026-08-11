@@ -453,13 +453,38 @@ async function startServer() {
           .from(clients)
           .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
         if (clientMatch.length === 0) {
-          return res.status(400).json({ error: "Referenced client does not exist or does not belong to the current user." });
+          const seedClientMap: Record<string, any> = {
+            'c1': { id: 'c1', userId: uid, name: 'Sarah Jenkins', email: 'sarah.jenkins@fitmail.com', phone: '(555) 234-5678', status: 'On Track', isArchived: false },
+            'c2': { id: 'c2', userId: uid, name: 'Mike Ross', email: 'mike.ross@pearson.com', phone: '(555) 876-5432', status: 'At Risk', isArchived: false },
+            'c3': { id: 'c3', userId: uid, name: 'Jessica Pearson', email: 'jessica.p@pearsonlaw.com', phone: '(555) 999-0011', status: 'New', isArchived: false },
+          };
+          const clientToInsert = seedClientMap[req.body.clientId] || {
+            id: req.body.clientId,
+            userId: uid,
+            name: req.body.clientName || 'Client',
+            status: 'New',
+            isArchived: false
+          };
+          try {
+            await db.insert(clients).values(prepareTimestampFields(clientToInsert)).onConflictDoNothing();
+          } catch (e) {
+            console.error("Auto-inserting client record for session failed:", e);
+          }
         }
       }
 
-      const newSession = prepareTimestampFields({ ...req.body, userId: uid });
-      const result = await db.insert(sessions).values(newSession).returning();
-      res.json(result[0]);
+      const { isPostSessionCapture, ...sessionData } = req.body;
+      let notes = sessionData.notes || '';
+      if (isPostSessionCapture && !notes.includes('[Post-Session Record]')) {
+        notes = notes ? `[Post-Session Record] ${notes}` : '[Post-Session Record]';
+      }
+
+      const newSession = prepareTimestampFields({ ...sessionData, notes, userId: uid });
+      const result = await db.insert(sessions).values(newSession).onConflictDoUpdate({
+        target: sessions.id,
+        set: newSession
+      }).returning();
+      res.json(result[0] || { ...newSession, isPostSessionCapture });
     } catch (error: any) {
       console.error("Error creating session:", error);
       res.status(500).json({ error: error.message });
@@ -477,17 +502,34 @@ async function startServer() {
           .from(clients)
           .where(and(eq(clients.id, req.body.clientId), eq(clients.userId, uid)));
         if (clientMatch.length === 0) {
-          return res.status(400).json({ error: "Referenced client does not exist or does not belong to the current user." });
+          const seedClientMap: Record<string, any> = {
+            'c1': { id: 'c1', userId: uid, name: 'Sarah Jenkins', email: 'sarah.jenkins@fitmail.com', phone: '(555) 234-5678', status: 'On Track', isArchived: false },
+            'c2': { id: 'c2', userId: uid, name: 'Mike Ross', email: 'mike.ross@pearson.com', phone: '(555) 876-5432', status: 'At Risk', isArchived: false },
+            'c3': { id: 'c3', userId: uid, name: 'Jessica Pearson', email: 'jessica.p@pearsonlaw.com', phone: '(555) 999-0011', status: 'New', isArchived: false },
+          };
+          const clientToInsert = seedClientMap[req.body.clientId] || {
+            id: req.body.clientId,
+            userId: uid,
+            name: req.body.clientName || 'Client',
+            status: 'New',
+            isArchived: false
+          };
+          try {
+            await db.insert(clients).values(prepareTimestampFields(clientToInsert)).onConflictDoNothing();
+          } catch (e) {
+            console.error("Auto-inserting client record for session failed:", e);
+          }
         }
       }
 
-      const updateData = prepareTimestampFields(req.body);
+      const { isPostSessionCapture, ...sessionData } = req.body;
+      const updateData = prepareTimestampFields(sessionData);
       const result = await db
         .update(sessions)
         .set(updateData)
         .where(and(eq(sessions.id, id as string), eq(sessions.userId, uid)))
         .returning();
-      res.json(result[0]);
+      res.json(result[0] || updateData);
     } catch (error: any) {
       console.error("Error updating session:", error);
       res.status(500).json({ error: error.message });

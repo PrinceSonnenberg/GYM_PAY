@@ -57,7 +57,9 @@ interface DataContextType {
     settings: UserSettings;
     updateUiTheme: (theme: Partial<UserSettings["uiTheme"]>) => void;
     updateHomePreferences: (prefs: Partial<UserSettings["homePreferences"]>) => void;
-    addClient: (name: string, email?: string, phone?: string, status?: 'On Track' | 'At Risk' | 'New') => Client;
+    clientError: string | null;
+    clearClientError: () => void;
+    addClient: (name: string, email?: string, phone?: string, status?: 'On Track' | 'At Risk' | 'New' | 'Archived') => Client;
     updateClient: (id: string, updates: Partial<Client>) => void;
     archiveClient: (id: string) => void;
     restoreClient: (id: string) => void;
@@ -169,6 +171,8 @@ const getInvoiceTotalAmount = (inv: Partial<Invoice>): number => {
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [clientError, setClientError] = useState<string | null>(null);
+    const clearClientError = () => setClientError(null);
     const [clients, setClients] = useState<Client[]>(() => loadLocal('app_clients', seedClients));
     const [invoices, setInvoices] = useState<Invoice[]>(() => 
         loadLocal<Invoice[]>('app_invoices', seedInvoices).filter(inv => getInvoiceTotalAmount(inv) > 0)
@@ -258,7 +262,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const sessionsRes = await apiFetch('/api/sessions');
                 if (sessionsRes.ok) {
                     const sessionsData = await sessionsRes.json();
-                    if (sessionsData) setSessions(sessionsData);
+                    if (Array.isArray(sessionsData) && sessionsData.length > 0) {
+                        setSessions(sessionsData);
+                    } else {
+                        // If DB is empty, sync any local storage sessions to DB
+                        const local = loadLocal<Session[]>('app_sessions', seedSessions);
+                        if (local && local.length > 0) {
+                            setSessions(local);
+                            local.forEach(s => {
+                                apiFetch('/api/sessions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(s),
+                                }).catch(() => {});
+                            });
+                        }
+                    }
                 }
             } catch (err) {
                 console.error('Error loading initial data from DB:', err);
@@ -353,7 +372,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setServices(prev => prev.filter(s => s.id !== id));
     };
 
-    const addClient = (name: string, email?: string, phone?: string, status: 'On Track' | 'At Risk' | 'New' = 'New'): Client => {
+    const addClient = (name: string, email?: string, phone?: string, status: 'On Track' | 'At Risk' | 'New' | 'Archived' = 'New'): Client => {
         const client: Client = {
             id: crypto.randomUUID(),
             name: name.trim(),
@@ -363,6 +382,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             createdAt: new Date().toISOString(),
         };
         setClients(prev => [...prev, client]);
+        setClientError(null);
         apiFetch('/api/clients', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -372,46 +392,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const updateClient = (id: string, updates: Partial<Client>) => {
-        let previousClient: Client | undefined;
-        setClients(prev => {
-            previousClient = prev.find(c => c.id === id);
-            return prev.map(c => c.id === id ? { ...c, ...updates } : c);
-        });
+        const previousClient = clients.find(c => c.id === id);
+        if (!previousClient) return;
 
-        // Use a slight timeout to ensure the state has updated locally before making the request
-        setTimeout(() => {
-            setClients(current => {
-                const target = current.find(c => c.id === id);
-                if (target) {
-                    apiFetch(`/api/clients/${id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(target),
-                    }).then(async res => {
-                        if (!res.ok) {
-                            const errData = await res.json().catch(() => ({}));
-                            console.error('Cloud SQL sync error:', errData);
-                            // Revert on error
-                            if (previousClient) {
-                                setClients(c => c.map(item => item.id === id ? previousClient! : item));
-                            }
-                            alert(`Failed to save client: ${errData.error || 'Unknown error'}`);
-                        }
-                    }).catch(err => {
-                        console.error('Cloud SQL sync error:', err);
-                        // Revert on error
-                        if (previousClient) {
-                            setClients(c => c.map(item => item.id === id ? previousClient! : item));
-                        }
-                    });
-                }
-                return current;
-            });
-        }, 0);
+        const updatedClient: Client = { ...previousClient, ...updates };
+
+        // Synchronous state update with no setTimeout or nested closures mutating outer scope
+        setClients(prev => prev.map(c => c.id === id ? updatedClient : c));
+        setClientError(null);
+
+        apiFetch(`/api/clients/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedClient),
+        }).then(async res => {
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                const errMsg = errData.error || 'Failed to save client on server.';
+                console.error('Cloud SQL sync error:', errMsg);
+                // Revert on error
+                setClients(prev => prev.map(c => c.id === id ? previousClient : c));
+                setClientError(errMsg);
+            }
+        }).catch(err => {
+            console.error('Cloud SQL sync error:', err);
+            // Revert on error
+            setClients(prev => prev.map(c => c.id === id ? previousClient : c));
+            setClientError(err?.message || 'Network error updating client.');
+        });
     };
 
     const archiveClient = (id: string) => {
-        updateClient(id, { isArchived: true, status: 'Archived' as any });
+        updateClient(id, { isArchived: true, status: 'Archived' });
     };
 
     const restoreClient = (id: string) => {
@@ -438,39 +450,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const markInvoicePaid = (id: string) => {
-        let updatedInvoice: Invoice | null = null;
-        setInvoices(prev => prev.map(inv => {
-            if (inv.id === id) {
-                updatedInvoice = { ...inv, status: 'paid' };
-                return updatedInvoice;
-            }
-            return inv;
-        }));
-        if (updatedInvoice) {
-            apiFetch(`/api/invoices/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedInvoice),
-            }).catch(err => console.error('Cloud SQL sync error (mark invoice paid):', err));
-        }
+        const target = invoices.find(inv => inv.id === id);
+        if (!target) return;
+        const updatedInvoice: Invoice = { ...target, status: 'paid' };
+        setInvoices(prev => prev.map(inv => inv.id === id ? updatedInvoice : inv));
+        apiFetch(`/api/invoices/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedInvoice),
+        }).catch(err => console.error('Cloud SQL sync error (mark invoice paid):', err));
     };
 
     const cancelInvoice = (id: string) => {
-        let updatedInvoice: Invoice | null = null;
-        setInvoices(prev => prev.map(inv => {
-            if (inv.id === id) {
-                updatedInvoice = { ...inv, status: 'cancelled' };
-                return updatedInvoice;
-            }
-            return inv;
-        }));
-        if (updatedInvoice) {
-            apiFetch(`/api/invoices/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedInvoice),
-            }).catch(err => console.error('Cloud SQL sync error (cancel invoice):', err));
-        }
+        const target = invoices.find(inv => inv.id === id);
+        if (!target) return;
+        const updatedInvoice: Invoice = { ...target, status: 'cancelled' };
+        setInvoices(prev => prev.map(inv => inv.id === id ? updatedInvoice : inv));
+        apiFetch(`/api/invoices/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedInvoice),
+        }).catch(err => console.error('Cloud SQL sync error (cancel invoice):', err));
     };
 
     const sendInvoiceReminder = async (id: string): Promise<void> => {
@@ -536,7 +536,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const addSession: DataContextType['addSession'] = (session) => {
         const newSession = { ...session, id: crypto.randomUUID(), status: session.status || 'scheduled' };
-        setSessions(prev => [...prev, newSession]);
+        setSessions(prev => {
+            const next = [...prev, newSession];
+            try { localStorage.setItem('app_sessions', JSON.stringify(next)); } catch (e) {}
+            return next;
+        });
         apiFetch('/api/sessions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -600,6 +604,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 sessions,
                 services,
                 settings,
+                clientError,
+                clearClientError,
                 addClient,
                 updateClient,
                 archiveClient,

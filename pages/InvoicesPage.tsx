@@ -26,6 +26,8 @@ const InvoicesPage: React.FC = () => {
     const [reminderToast, setReminderToast] = useState<string | null>(null);
     const [isSendingReminder, setIsSendingReminder] = useState(false);
     const [reminderError, setReminderError] = useState<string | null>(null);
+    const [confirmingCancel, setConfirmingCancel] = useState(false);
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -94,7 +96,7 @@ const InvoicesPage: React.FC = () => {
             />
 
             {/* Selected Invoice Preview Modal */}
-            <Modal open={!!selectedInvoice} onClose={() => setSelectedInvoice(null)}>
+            <Modal open={!!selectedInvoice} onClose={() => { setSelectedInvoice(null); setConfirmingCancel(false); setConfirmingDelete(false); }}>
                 {selectedInvoice && (
                     <div className="flex flex-col max-h-[90vh]">
                         <div className="bg-ink p-5 text-white flex justify-between items-center border-b-2 border-ink">
@@ -102,71 +104,71 @@ const InvoicesPage: React.FC = () => {
                                 <h3 className="font-display text-lg tracking-wide">INVOICE #{selectedInvoice.id.slice(-6).toUpperCase()}</h3>
                                 <p className="text-xs text-white/60">Issued: {selectedInvoice.issuedDate}</p>
                             </div>
-                            <button onClick={() => setSelectedInvoice(null)} className="text-white/70 hover:text-white">
+                            <button onClick={() => { setSelectedInvoice(null); setConfirmingCancel(false); setConfirmingDelete(false); }} className="text-white/70 hover:text-white">
                                 <Icon name="close" />
                             </button>
                         </div>
 
-                        <div className="p-5 overflow-visible space-y-4">
-                            <div className="flex justify-between items-center p-3 rounded-xl bg-background border border-border-light">
+                        <div className="p-3.5 overflow-y-auto space-y-2.5 min-h-0 flex-1">
+                            <div className="flex justify-between items-center p-2.5 rounded-xl bg-background border border-border-light">
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-text-muted">Billed To</p>
-                                    <p className="font-bold text-sm">{clientFor(selectedInvoice.clientId)?.name || 'Unknown Client'}</p>
+                                    <p className="font-bold text-xs">{clientFor(selectedInvoice.clientId)?.name || 'Unknown Client'}</p>
                                     {clientFor(selectedInvoice.clientId)?.email && (
-                                        <p className="text-xs text-text-muted">{clientFor(selectedInvoice.clientId)?.email}</p>
+                                        <p className="text-[11px] text-text-muted">{clientFor(selectedInvoice.clientId)?.email}</p>
                                     )}
                                 </div>
-                                <span className={`text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full ${
+                                <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full ${
                                     selectedInvoice.status === 'paid' ? 'bg-signal-soft text-signal' : 'bg-primary-soft text-primary'
                                 }`}>
                                     {selectedInvoice.status}
                                 </span>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Services Breakdown</p>
-                                {selectedInvoice.items.map((item) => (
-                                    <div key={item.id} className="flex justify-between items-center text-xs py-2 border-b border-border-light last:border-none">
+                                {selectedInvoice.items.map((item, idx) => (
+                                    <div key={item.id || `selected-item-${idx}`} className="flex justify-between items-center text-xs py-1.5 border-b border-border-light last:border-none">
                                         <div>
-                                            <p className="font-bold">{item.title}</p>
+                                            <p className="font-bold text-xs">{item.title}</p>
                                             <p className="text-[10px] text-text-muted">{item.details}</p>
                                         </div>
-                                        <span className="font-mono font-bold">{formatCurrency(item.amount, settings.invoiceDefaults.currency)}</span>
+                                        <span className="font-mono font-bold text-xs">{formatCurrency(item.amount, settings.invoiceDefaults.currency)}</span>
                                     </div>
                                 ))}
                             </div>
 
                             {selectedInvoice.notes && (
-                                <div className="p-3 bg-background rounded-xl text-xs space-y-1 border border-border-light">
+                                <div className="p-2 bg-background rounded-xl text-xs space-y-0.5 border border-border-light">
                                     <p className="text-[10px] font-bold uppercase text-text-muted">Notes</p>
-                                    <p className="text-text-main italic">{selectedInvoice.notes}</p>
+                                    <p className="text-text-main italic text-[11px]">{selectedInvoice.notes}</p>
                                 </div>
                             )}
 
-                            <div className="bg-ink p-4 rounded-xl text-white flex justify-between items-center">
-                                <span className="font-display text-sm">TOTAL AMOUNT</span>
-                                <span className="font-mono text-volt font-bold text-xl">{formatCurrency(calcTotal(selectedInvoice), settings.invoiceDefaults.currency)}</span>
+                            <div className="bg-ink p-3 rounded-xl text-white flex justify-between items-center">
+                                <span className="font-display text-xs tracking-wide">TOTAL AMOUNT</span>
+                                <span className="font-mono text-volt font-bold text-base">{formatCurrency(calcTotal(selectedInvoice), settings.invoiceDefaults.currency)}</span>
                             </div>
                         </div>
 
-                        <div className="p-4 bg-background border-t-2 border-ink space-y-2">
+                        <div className="p-3 bg-background border-t-2 border-ink space-y-1.5 shrink-0">
                             {reminderError && (
-                                <div className="p-3 rounded-xl bg-danger-soft/80 border-2 border-danger text-danger text-xs font-bold flex items-center justify-between text-left">
-                                    <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-xl bg-danger-soft/80 border-2 border-danger text-danger text-xs font-bold flex items-center justify-between text-left">
+                                    <div className="flex items-center gap-1.5">
                                         <Icon name="error" className="shrink-0 text-base" />
-                                        <span>{reminderError}</span>
+                                        <span className="text-[11px]">{reminderError}</span>
                                     </div>
-                                    <button onClick={() => setReminderError(null)} className="p-1 hover:opacity-80">
-                                        <Icon name="close" className="text-sm" />
+                                    <button onClick={() => setReminderError(null)} className="p-0.5 hover:opacity-80">
+                                        <Icon name="close" className="text-xs" />
                                     </button>
                                 </div>
                             )}
 
                             <button
                                 onClick={() => setShowPdfView(true)}
-                                className="w-full py-2.5 rounded-full bg-ink text-volt border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                className="w-full py-2 rounded-full bg-ink text-volt border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-black transition-colors flex items-center justify-center gap-1.5 shadow-sm"
                             >
-                                <Icon name="picture_as_pdf" />
+                                <Icon name="picture_as_pdf" className="text-base" />
                                 <span>Preview & Download PDF</span>
                             </button>
 
@@ -177,23 +179,43 @@ const InvoicesPage: React.FC = () => {
                                             markInvoicePaid(selectedInvoice.id);
                                             setSelectedInvoice(prev => prev ? { ...prev, status: 'paid' } : null);
                                         }}
-                                        className="w-full py-3 rounded-full bg-volt text-ink border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-volt/80 transition-colors flex items-center justify-center gap-2"
+                                        className="w-full py-2 rounded-full bg-volt text-ink border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-volt/80 transition-colors flex items-center justify-center gap-1.5"
                                     >
-                                        <Icon name="payments" />
+                                        <Icon name="payments" className="text-base" />
                                         <span>Mark as Paid</span>
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            if (window.confirm("Are you sure you want to cancel this invoice? It will not be counted towards your revenue.")) {
-                                                cancelInvoice(selectedInvoice.id);
-                                                setSelectedInvoice(prev => prev ? { ...prev, status: 'cancelled' } : null);
-                                            }
-                                        }}
-                                        className="w-full py-3 rounded-full bg-white text-ink border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-border-light transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <Icon name="cancel" />
-                                        <span>Cancel Invoice</span>
-                                    </button>
+
+                                    {confirmingCancel ? (
+                                        <div className="p-2.5 bg-rose-50 border-2 border-danger rounded-2xl space-y-2 text-center animate-fadeIn">
+                                            <p className="text-[11px] leading-tight font-bold text-ink">Are you sure you want to cancel this invoice? It will not count towards revenue.</p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setConfirmingCancel(false)}
+                                                    className="flex-1 py-1.5 rounded-full border-2 border-ink text-xs font-bold bg-white text-ink hover:bg-border-light"
+                                                >
+                                                    Keep Active
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        cancelInvoice(selectedInvoice.id);
+                                                        setSelectedInvoice(prev => prev ? { ...prev, status: 'cancelled' } : null);
+                                                        setConfirmingCancel(false);
+                                                    }}
+                                                    className="flex-1 py-1.5 rounded-full bg-danger text-white text-xs font-bold hover:bg-danger/80 border-2 border-danger"
+                                                >
+                                                    Confirm Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setConfirmingCancel(true)}
+                                            className="w-full py-2 rounded-full bg-white text-ink border-2 border-ink font-bold uppercase text-xs tracking-wide hover:bg-border-light transition-colors flex items-center justify-center gap-1.5"
+                                        >
+                                            <Icon name="cancel" className="text-base" />
+                                            <span>Cancel Invoice</span>
+                                        </button>
+                                    )}
 
                                     <button
                                         onClick={async () => {
@@ -217,13 +239,13 @@ const InvoicesPage: React.FC = () => {
                                             }
                                         }}
                                         disabled={isSendingReminder}
-                                        className={`w-full py-2.5 rounded-full border-2 border-ink font-bold uppercase text-xs tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors ${
+                                        className={`w-full py-2 rounded-full border-2 border-ink font-bold uppercase text-xs tracking-wide flex items-center justify-center gap-1.5 shadow-sm transition-colors ${
                                             isSendingReminder
                                                 ? 'bg-primary-soft text-primary border-primary cursor-wait'
                                                 : 'bg-primary text-white hover:bg-primary-hover'
                                         }`}
                                     >
-                                        <Icon name={isSendingReminder ? "autorenew" : "notifications_active"} className={isSendingReminder ? "animate-spin" : ""} />
+                                        <Icon name={isSendingReminder ? "autorenew" : "notifications_active"} className={`text-base ${isSendingReminder ? "animate-spin" : ""}`} />
                                         <span>
                                             {isSendingReminder
                                                 ? 'Sending Email...'
@@ -235,18 +257,37 @@ const InvoicesPage: React.FC = () => {
                                 </>
                             )}
 
-                            <button
-                                onClick={() => {
-                                    if (confirm('Delete this invoice?')) {
-                                        deleteInvoice(selectedInvoice.id);
-                                        setSelectedInvoice(null);
-                                    }
-                                }}
-                                className="w-full py-2.5 rounded-full border-2 border-danger text-danger font-bold uppercase text-xs tracking-wide hover:bg-danger-soft transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Icon name="delete" />
-                                <span>Delete Invoice</span>
-                            </button>
+                            {confirmingDelete ? (
+                                <div className="p-2.5 bg-rose-50 border-2 border-danger rounded-2xl space-y-2 text-center animate-fadeIn">
+                                    <p className="text-[11px] leading-tight font-bold text-ink">Permanently delete this invoice?</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setConfirmingDelete(false)}
+                                            className="flex-1 py-1.5 rounded-full border-2 border-ink text-xs font-bold bg-white text-ink hover:bg-border-light"
+                                        >
+                                            Keep
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                deleteInvoice(selectedInvoice.id);
+                                                setSelectedInvoice(null);
+                                                setConfirmingDelete(false);
+                                            }}
+                                            className="flex-1 py-1.5 rounded-full bg-danger text-white text-xs font-bold hover:bg-danger/80 border-2 border-danger"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => setConfirmingDelete(true)}
+                                    className="w-full py-2 rounded-full border-2 border-danger text-danger font-bold uppercase text-xs tracking-wide hover:bg-danger-soft transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                    <Icon name="delete" className="text-base" />
+                                    <span>Delete Invoice</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -349,8 +390,8 @@ const InvoicesPage: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {selectedInvoice.items.map((item) => (
-                                            <tr key={item.id} className="border-b border-border-light">
+                                        {selectedInvoice.items.map((item, idx) => (
+                                            <tr key={item.id || `pdf-item-${idx}`} className="border-b border-border-light">
                                                 <td className="py-3 px-3">
                                                     <p className="font-bold text-ink">{item.title}</p>
                                                     <p className="text-[10px] text-text-muted mt-1">{item.details}</p>
@@ -477,14 +518,14 @@ const InvoicesPage: React.FC = () => {
                     />
                 ) : (
                     <div className="space-y-3">
-                        {filteredInvoices.map(inv => {
+                        {filteredInvoices.map((inv, idx) => {
                             const client = clientFor(inv.clientId);
                             const total = calcTotal(inv);
                             const isOverdue = inv.status === 'sent' && inv.dueDate < todayStr;
 
                             return (
                                 <div
-                                    key={inv.id}
+                                    key={inv.id || `invoice-${idx}`}
                                     onClick={() => setSelectedInvoice(inv)}
                                     className={`p-4 rounded-2xl bg-white border-2 hover:border-primary cursor-pointer transition-all space-y-3 shadow-card ${
                                         isOverdue ? 'border-danger bg-danger-soft/20' : 'border-ink'

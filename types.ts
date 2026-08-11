@@ -21,6 +21,7 @@ export interface Session {
     format: 'video' | 'location';
     status?: SessionAttendanceStatus;
     notes?: string;
+    isPostSessionCapture?: boolean;
 }
 
 export interface ExpenseItem {
@@ -57,7 +58,7 @@ export interface Client {
     email?: string;
     phone?: string;
     avatarUrl?: string;
-    status: 'On Track' | 'At Risk' | 'New';
+    status: 'On Track' | 'At Risk' | 'New' | 'Archived';
     notes?: string;
     isArchived?: boolean;
     createdAt?: string;

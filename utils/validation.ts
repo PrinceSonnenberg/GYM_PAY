@@ -51,13 +51,12 @@ export function validateClient(input: ClientInput): string[] {
   const phone = input.phone ? input.phone.trim() : '';
   if (phone) {
     const cleaned = phone.replace(/[\s\-\(\)\.]/g, '');
-    const isSouthAfricanLocal = /^0[1-8]\d{8}$/.test(cleaned);
-    const isSouthAfricanIntlNoPlus = /^27[1-8]\d{8}$/.test(cleaned);
+    const isSouthAfricanLocal = /^0\d{9}$/.test(cleaned);
+    const isSouthAfricanIntl = /^\+?27\d{9}$/.test(cleaned);
     const isInternational = /^\+[1-9]\d{6,14}$/.test(cleaned);
-    const isBasicTenDigit = /^\d{7,15}$/.test(cleaned);
 
-    if (!isSouthAfricanLocal && !isSouthAfricanIntlNoPlus && !isInternational && !isBasicTenDigit) {
-      errors.push('Phone number must be a valid South African number, international format, or a standard 7-15 digit number.');
+    if (!isSouthAfricanLocal && !isSouthAfricanIntl && !isInternational) {
+      errors.push('Phone number must be a valid South African number (e.g., 082 123 4567 or +27 82 123 4567) or a properly-formatted international number starting with +.');
     }
   }
   

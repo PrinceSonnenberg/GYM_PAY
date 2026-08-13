@@ -83,15 +83,15 @@ export function validateInvoice(input: InvoiceInput): string[] {
   if (!input.items || !Array.isArray(input.items) || input.items.length === 0) {
     errors.push('At least one line item is required.');
   } else {
-    const totalAmount = input.items.reduce((sum, item) => {
+    const subtotal = input.items.reduce((sum, item) => {
       const lineAmount = item.amount !== undefined 
         ? item.amount 
         : ((item.rate || 0) * (item.sessions || 1));
       return sum + (Number(lineAmount) || 0);
     }, 0);
 
-    if (totalAmount <= 0) {
-      errors.push('Invoice total must be greater than zero.');
+    if (subtotal <= 0) {
+      errors.push('Invoice subtotal before discount must be greater than zero.');
     }
   }
 

@@ -64,7 +64,7 @@ interface DataContextType {
     archiveClient: (id: string) => void;
     restoreClient: (id: string) => void;
     deleteClient: (id: string) => void;
-    addInvoice: (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'overdue' }) => Invoice;
+    addInvoice: (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'cancelled' | 'draft' }) => Invoice;
     markInvoicePaid: (id: string) => void;
     cancelInvoice: (id: string) => void;
     sendInvoiceReminder: (id: string) => Promise<void>;
@@ -152,12 +152,17 @@ const loadLocal = <T,>(key: string, fallback: T): T => {
     }
 };
 
-const getInvoiceTotalAmount = (inv: Partial<Invoice>): number => {
+const getInvoiceSubtotalAmount = (inv: Partial<Invoice>): number => {
     if (!inv || !Array.isArray(inv.items) || inv.items.length === 0) return 0;
-    const sub = inv.items.reduce((sum, item) => {
+    return inv.items.reduce((sum, item) => {
         const amt = typeof item?.amount === 'number' ? item.amount : parseFloat(String(item?.amount ?? 0));
         return sum + (Number.isNaN(amt) ? 0 : amt);
     }, 0);
+};
+
+const getInvoiceTotalAmount = (inv: Partial<Invoice>): number => {
+    const sub = getInvoiceSubtotalAmount(inv);
+    if (sub <= 0) return 0;
     
     let totalAfterDiscount = sub;
     if (inv.discountType === 'percentage' && typeof inv.discountValue === 'number') {
@@ -175,7 +180,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const clearClientError = () => setClientError(null);
     const [clients, setClients] = useState<Client[]>(() => loadLocal('app_clients', seedClients));
     const [invoices, setInvoices] = useState<Invoice[]>(() => 
-        loadLocal<Invoice[]>('app_invoices', seedInvoices).filter(inv => getInvoiceTotalAmount(inv) > 0)
+        loadLocal<Invoice[]>('app_invoices', seedInvoices)
     );
     const [expenses, setExpenses] = useState<ExpenseItem[]>(() => loadLocal('app_expenses', seedExpenses));
     const [goals, setGoals] = useState<ActiveGoal[]>(() => loadLocal('app_goals', seedGoals));
@@ -435,12 +440,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         apiFetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(err => console.error('Cloud SQL sync error:', err));
     };
 
-    const addInvoice = (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'overdue' }): Invoice => {
+    const addInvoice = (invoice: Omit<Invoice, 'id'> & { status?: 'sent' | 'paid' | 'cancelled' | 'draft' }): Invoice => {
         const newInv: Invoice = { status: invoice.status || 'sent', ...invoice, id: crypto.randomUUID() };
-        if (getInvoiceTotalAmount(newInv) <= 0) {
-            throw new Error("Invoice total must be greater than zero.");
+        if (getInvoiceSubtotalAmount(newInv) <= 0) {
+            throw new Error("Invoice subtotal before discount must be greater than zero.");
         }
-        setInvoices(prev => [newInv, ...prev].filter(inv => getInvoiceTotalAmount(inv) > 0));
+        setInvoices(prev => [newInv, ...prev]);
         apiFetch('/api/invoices', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

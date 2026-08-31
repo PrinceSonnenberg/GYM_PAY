@@ -9,12 +9,61 @@ import { adminAuth } from "./src/lib/firebase-admin.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { eq, and } from "drizzle-orm";
 import { validateClient, validateInvoice } from "./utils/validation.ts";
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+import sanitizeHtml from "sanitize-html";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Trust the reverse proxy (e.g. Cloud Run/Nginx) so rate limiting uses the correct client IP
+  app.set("trust proxy", 1);
+
+  // 1. Security Headers with Helmet
+  app.use(helmet({
+    contentSecurityPolicy: false, // Disabled for Vite HMR and dev compatibility
+  }));
+
+  // 2. Strict CORS policy
+  app.use(cors({
+    origin: process.env.NODE_ENV === "production" ? process.env.ALLOWED_ORIGIN || "*" : "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }));
+
+  // 3. API Rate Limiting to prevent abuse/brute force
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 150, // Limit each IP to 150 requests per windowMs
+    standardHeaders: true, 
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." }
+  });
+  app.use("/api/", apiLimiter);
+
   app.use(express.json({ limit: "10mb" }));
+
+  // 4. HTML Sanitization to prevent XSS (Cross-Site Scripting)
+  app.use((req, res, next) => {
+    if (req.body && typeof req.body === 'object') {
+      const sanitizeObject = (obj: any) => {
+        for (const key in obj) {
+          if (typeof obj[key] === 'string') {
+            obj[key] = sanitizeHtml(obj[key], {
+              allowedTags: [], // Strip all HTML tags
+              allowedAttributes: {}
+            });
+          } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+            sanitizeObject(obj[key]);
+          }
+        }
+      };
+      sanitizeObject(req.body);
+    }
+    next();
+  });
 
   // API Routes
   app.get("/api/health", (req, res) => {

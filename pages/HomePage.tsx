@@ -18,7 +18,22 @@ const HomePage: React.FC = () => {
     const [activeAttendanceSession, setActiveAttendanceSession] = useState<Session | null>(null);
     const [showNotifications, setShowNotifications] = useState(false);
     const [trendPeriod, setTrendPeriod] = useState<'This Month' | 'Last Month' | 'Yearly'>('This Month');
+    const [revenueTimeframe, setRevenueTimeframe] = useState<'all' | 'month'>(() => {
+        try {
+            const saved = localStorage.getItem('gympay_revenue_timeframe');
+            return saved === 'month' ? 'month' : 'all';
+        } catch {
+            return 'all';
+        }
+    });
     const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+
+    const handleSetRevenueTimeframe = (timeframe: 'all' | 'month') => {
+        setRevenueTimeframe(timeframe);
+        try {
+            localStorage.setItem('gympay_revenue_timeframe', timeframe);
+        } catch {}
+    };
 
     // Pending Invoice Action Modal State
     const [selectedPendingInvoice, setSelectedPendingInvoice] = useState<Invoice | null>(null);
@@ -91,10 +106,50 @@ const HomePage: React.FC = () => {
         const total = afterDiscount + afterDiscount * taxRate;
         return Number.isNaN(total) ? 0 : total;
     };
-    const paidInvoices = invoices.filter(i => i.status === 'paid' && invoiceTotal(i) > 0);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const isCurrentMonthInvoice = (inv: typeof invoices[number]): boolean => {
+        const dateStr = inv.issuedDate || inv.dueDate;
+        if (dateStr) {
+            const parts = dateStr.slice(0, 10).split('-');
+            if (parts.length === 3) {
+                const y = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10) - 1;
+                if (!Number.isNaN(y) && !Number.isNaN(m)) {
+                    return y === currentYear && m === currentMonth;
+                }
+            }
+            const d = new Date(dateStr);
+            if (!Number.isNaN(d.getTime())) {
+                return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+            }
+        }
+        if ((inv as any).createdAt) {
+            const d = new Date((inv as any).createdAt);
+            if (!Number.isNaN(d.getTime())) {
+                return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+            }
+        }
+        return false;
+    };
+
+    const allPaidInvoices = invoices.filter(i => i.status === 'paid' && invoiceTotal(i) > 0);
+    const monthPaidInvoices = allPaidInvoices.filter(isCurrentMonthInvoice);
+
+    const allTimeRevenue = allPaidInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
+    const monthRevenue = monthPaidInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
+
+    // Keep 'paidInvoices' and 'revenue' aliases for backward compatibility (used in income trend)
+    const paidInvoices = allPaidInvoices;
+    const revenue = allTimeRevenue;
+
+    const displayedRevenue = revenueTimeframe === 'month' ? monthRevenue : allTimeRevenue;
+    const displayedPaidInvoices = revenueTimeframe === 'month' ? monthPaidInvoices : allPaidInvoices;
+
     const pendingInvoices = invoices.filter(i => i.status === 'sent' && invoiceTotal(i) > 0);
     const hasPendingInvoices: boolean = pendingInvoices.length >= 1;
-    const revenue = paidInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
     const pending = pendingInvoices.reduce((sum, inv) => sum + invoiceTotal(inv), 0 as number);
     const recentExpenses = expenses.slice(0, 2);
     const clientName = (id: string) => clients.find(c => c.id === id)?.name || 'Unknown';
@@ -237,23 +292,64 @@ const HomePage: React.FC = () => {
                 
                 {(settings.homePreferences?.showRevenue ?? true) && (
                 <section className="grid grid-cols-2 gap-3">
-                    <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-2 bg-ink p-3.5 text-white cursor-pointer hover:opacity-95 transition-opacity">
-                        <div className="flex items-center gap-1.5 text-white/60">
-                            <Icon name="payments" className="text-[16px]" />
-                            <p className="text-[9px] font-bold uppercase tracking-widest">Revenue</p>
+                    <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-2 bg-ink p-3.5 text-white cursor-pointer hover:opacity-95 transition-opacity group">
+                        <div className="flex items-center justify-between gap-1 min-h-[22px]">
+                            <div className="flex items-center gap-1.5 text-white/60 min-w-0">
+                                <Icon name="payments" className="text-[16px] shrink-0" />
+                                <p className="text-[9px] font-bold uppercase tracking-widest truncate">Revenue</p>
+                            </div>
+                            
+                            {/* Toggle between All Time and Current Month */}
+                            <div 
+                                onClick={(e) => e.stopPropagation()} 
+                                className="flex items-center rounded-md bg-white/10 p-0.5 border border-white/15 shrink-0"
+                                role="group"
+                                aria-label="Revenue timeframe"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetRevenueTimeframe('all')}
+                                    className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                        revenueTimeframe === 'all'
+                                            ? 'bg-volt text-ink shadow-xs'
+                                            : 'text-white/60 hover:text-white'
+                                    }`}
+                                    title="Show all-time revenue"
+                                >
+                                    All
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetRevenueTimeframe('month')}
+                                    className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                        revenueTimeframe === 'month'
+                                            ? 'bg-volt text-ink shadow-xs'
+                                            : 'text-white/60 hover:text-white'
+                                    }`}
+                                    title="Show current month revenue"
+                                >
+                                    Month
+                                </button>
+                            </div>
                         </div>
                         <div>
-                            <p className="font-display text-2xl tracking-wide">{formatCurrency(revenue)}</p>
+                            <p className="font-display text-2xl tracking-wide">{formatCurrency(displayedRevenue)}</p>
                             <div className="flex items-center gap-1 mt-0.5">
-                                <Icon name="trending_up" className="text-[13px] text-volt" />
-                                <span className="text-[10px] font-bold text-volt">{paidInvoices.length} PAID INVOICE{paidInvoices.length === 1 ? '' : 'S'}</span>
+                                <Icon name="trending_up" className="text-[13px] text-volt shrink-0" />
+                                <span className="text-[10px] font-bold text-volt truncate">
+                                    {revenueTimeframe === 'month'
+                                        ? `${displayedPaidInvoices.length} PAID THIS MONTH`
+                                        : `${displayedPaidInvoices.length} PAID INVOICE${displayedPaidInvoices.length === 1 ? '' : 'S'}`}
+                                </span>
                             </div>
                         </div>
                     </div>
                     <div onClick={() => navigate('/invoices')} className="plate flex flex-col justify-between gap-2 bg-primary p-3.5 text-white cursor-pointer hover:opacity-95 transition-opacity">
-                        <div className="flex items-center gap-1.5 text-white/70">
-                            <Icon name="pending_actions" className="text-[16px]" />
-                            <p className="text-[9px] font-bold uppercase tracking-widest">Pending</p>
+                        <div className="flex items-center justify-between min-h-[22px]">
+                            <div className="flex items-center gap-1.5 text-white/70">
+                                <Icon name="pending_actions" className="text-[16px]" />
+                                <p className="text-[9px] font-bold uppercase tracking-widest">Pending</p>
+                            </div>
                         </div>
                         <div>
                             <p className="font-display text-2xl tracking-wide">{formatCurrency(pending)}</p>

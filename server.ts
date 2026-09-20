@@ -26,9 +26,9 @@ async function startServer() {
     contentSecurityPolicy: false, // Disabled for Vite HMR and dev compatibility
   }));
 
-  // 2. Strict CORS policy
+  // 2. Strict CORS policy: do not fall back to "*" in production; block cross-origin requests if ALLOWED_ORIGIN is missing
   app.use(cors({
-    origin: process.env.NODE_ENV === "production" ? process.env.ALLOWED_ORIGIN || "*" : "*",
+    origin: process.env.NODE_ENV === "production" ? (process.env.ALLOWED_ORIGIN || false) : "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }));

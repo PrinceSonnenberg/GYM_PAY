@@ -1,0 +1,6 @@
+{
+  "name": "GymPay",
+  "description": "Business, client, session, and financial management web application for independent personal trainers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

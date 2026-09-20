@@ -10,6 +10,7 @@ import ExpensesPage from './pages/ExpensesPage';
 import ClientsPage from './pages/ClientsPage';
 import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import StatisticsPage from './pages/StatisticsPage';
 import LoginPage from './pages/LoginPage';
 import BottomNav from './components/BottomNav';
@@ -47,7 +48,7 @@ const App: React.FC = () => {
         return <LoginPage />;
     }
 
-    const showBottomNav = ['/', '/clients', '/calendar', '/settings', '/invoices', '/expenses', '/statistics'].includes(location.pathname);
+    const showBottomNav = ['/', '/clients', '/calendar', '/settings', '/invoices', '/expenses', '/statistics', '/notifications'].includes(location.pathname);
 
     return (
         <div className="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-x-hidden bg-background">
@@ -61,6 +62,7 @@ const App: React.FC = () => {
                 <Route path="/invoice/:clientId" element={<NewInvoicePage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/statistics" element={<StatisticsPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="*" element={<HomePage />} />

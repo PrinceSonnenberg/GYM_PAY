@@ -16,14 +16,19 @@ import {
     ServicesSettingsModal,
     LogoutModal
 } from '../components/settings';
+import NotificationsModal from '../components/NotificationsModal';
 
 type ModalType = 'theme' | 'home' | 'profile' | 'payout' | 'notifications' | 'invoiceDefaults' | 'taxRate' | 'services' | 'exportData' | 'logout' | 'seedData' | null;
 
 const SettingsPage: React.FC = () => {
     const navigate = useNavigate();
-    const { settings, services, resetAllData, clients, invoices, expenses } = useData();
+    const { settings, services, resetAllData, clients, invoices, expenses, sessions } = useData();
     const [activeModal, setActiveModal] = useState<ModalType>(null);
     const [successToast, setSuccessToast] = useState<string | null>(null);
+
+    // Compute today's sessions for notifications
+    const today = new Date().toISOString().slice(0, 10);
+    const todaySessions = (sessions || []).filter(s => s.date === today);
 
     const triggerToast = (msg: string) => {
         setSuccessToast(msg);
@@ -140,8 +145,8 @@ const SettingsPage: React.FC = () => {
                         </button>
 
                         <button
-                            onClick={() => setActiveModal('notifications')}
-                            className="flex w-full items-center gap-4 p-4 text-left hover:bg-background/60 transition-colors"
+                            onClick={() => navigate('/notifications')}
+                            className="flex w-full items-center gap-4 p-4 text-left hover:bg-background/60 transition-colors cursor-pointer"
                         >
                             <div className="flex size-10 items-center justify-center rounded-full bg-volt-soft text-ink">
                                 <Icon name="notifications" className="text-[20px]" />
@@ -289,6 +294,13 @@ const SettingsPage: React.FC = () => {
             <TaxRateModal open={activeModal === 'taxRate'} onClose={() => setActiveModal(null)} onSuccess={triggerToast} />
             <ServicesSettingsModal open={activeModal === 'services'} onClose={() => setActiveModal(null)} onSuccess={triggerToast} />
             <LogoutModal open={activeModal === 'logout'} onClose={() => setActiveModal(null)} />
+            <NotificationsModal
+                isOpen={activeModal === 'notifications'}
+                onClose={() => setActiveModal(null)}
+                invoices={invoices}
+                todaySessions={todaySessions}
+                clients={clients}
+            />
 
             <Modal open={activeModal === 'seedData'} onClose={() => setActiveModal(null)}>
                 <div className="p-6">
